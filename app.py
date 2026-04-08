@@ -30,7 +30,7 @@ with st.sidebar:
     st.divider()
     if st.session_state.tier != "Agency":
         st.error("🔥 40% OFF CODE: LAUNCH40")
-        # Replace the link below with your actual payment link
+        # st.markdown("[🚀 UPGRADE TO AGENCY (£350)](https://buy.stripe.com/your-link-here)")
         st.markdown("[🚀 UPGRADE TO AGENCY (£350)](https://buy.stripe.com/your-link-here)")
 
 # --- THE APP TABS ---
