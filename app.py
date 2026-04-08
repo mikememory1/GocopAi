@@ -30,7 +30,7 @@ with st.sidebar:
     st.divider()
     if st.session_state.tier != "Agency":
         st.error("🔥 40% OFF CODE: LAUNCH40")
-        https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200
+        (https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200)
         st.markdown("[🚀 UPGRADE TO AGENCY (£350)](https://buy.stripe.com/your-link-here)")
 
 # --- THE APP TABS ---
