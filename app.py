@@ -44,6 +44,20 @@ with t1:
         st.success("Ad Script Generated!")
         st.code(f"HOOK: Why {prod} is the #1 choice in 2026. \nCTA: Link in Bio.")
 
+with t2:
+    st.subheader("🎬 AI VIDEO SCRIPT GENERATOR")
+    v_topic = st.text_input("What is your video about?", placeholder="e.g. How to scale an agency")
+    if st.button("GENERATE SCRIPT"):
+        if v_topic:
+            with st.status("Writing Viral Script..."):
+                time.sleep(2)
+            st.success("Script Ready!")
+            st.write(f"### **The Hook**\nStop scrolling if you want to know the truth about {v_topic}...")
+            st.write("### **The Meat**\nMost people fail because they lack a system. Here is the 3-step framework you need.")
+            st.write("### **Call to Action**\nLink in bio for the full breakdown!")
+        else:
+            st.warning("Please enter a topic first.")
+
 with t3:
     if st.session_state.tier != "Agency":
         st.markdown("""
@@ -57,7 +71,6 @@ with t3:
         st.subheader("🤖 GOCOPYAI STRATEGY AGENT")
         from openai import OpenAI
         
-        # This line pulls the key you just saved in Secrets
         client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
         if "messages" not in st.session_state:
@@ -65,13 +78,11 @@ with t3:
                 {"role": "system", "content": "You are the GoCopyAI Master Strategist. Help the user scale their agency to £10k/month. Be bold, tactical, and concise."}
             ]
 
-        # Display chat history
         for message in st.session_state.messages:
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        # Chat input box
         if prompt := st.chat_input("Ask your agent anything..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
