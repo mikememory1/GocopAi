@@ -36,60 +36,74 @@ with st.sidebar:
 t1, t2, t3 = st.tabs(["🎯 AD GENERATOR", "🎬 VIDEO SCRIPTS", "🤖 BUSINESS AGENT"])
 
 with t1:
-    st.subheader("🚀 AD GENERATOR")
-    prod = st.text_input("Product Name", placeholder="e.g. Luxury Watch")
-    if st.button("RUN AD STRATEGY"):
-        with st.status("Analyzing Market Psychology..."):
-            time.sleep(1.5)
-        st.success("Ad Script Generated!")
-        st.code(f"HOOK: Why {prod} is the #1 choice in 2026. \nCTA: Link in Bio.")
-
-with t2:
-    st.subheader("🎬 AI VIDEO SCRIPT GENERATOR (PRO)")
-    v_topic = st.text_input("What is the video topic?", placeholder="e.g. 3 ways to get clients with cold DMing")
+    st.subheader("🎯 PRO AD COPY GENERATOR")
+    prod = st.text_input("Product/Service Name", placeholder="e.g. 1-on-1 Fitness Coaching")
+    target = st.text_input("Target Audience", placeholder="e.g. Busy executives over 40")
     
-    if st.button("GENERATE FULL SCRIPT"):
-        if v_topic:
-            with st.status("AI is writing your viral script..."):
-                # This calls OpenAI just like your Business Agent does
+    if st.button("GENERATE AI ADS"):
+        if prod and target:
+            with st.status("Analyzing Market Psychology..."):
                 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
                 response = client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=[
-                        {"role": "system", "content": "You are a viral TikTok and Reel scriptwriter. Write engaging, high-retention scripts with visual cues."},
-                        {"role": "user", "content": f"Write a 60-second viral video script about: {v_topic}. Include a strong hook, 3 value points, and a CTA."}
+                        {"role": "system", "content": "You are an expert direct-response copywriter like Gary Halbert. Write high-converting ad copy."},
+                        {"role": "user", "content": f"Write 3 different ad variations for {prod} targeting {target}. Include one 'Short & Punchy', one 'Story-based', and one 'List of Benefits'. Use emojis."}
                     ]
                 )
-                full_script = response.choices[0].message.content
-            
-            st.success("Script Generated!")
-            st.markdown("---")
-            st.markdown(full_script) # This will now show the full AI response
+                ad_results = response.choices[0].message.content
+            st.success("Ads Ready!")
+            st.markdown(ad_results)
         else:
-            st.warning("Please enter a topic first.")
+            st.warning("Please fill in both fields.")
+
+with t2:
+    st.subheader("🎬 VIRAL VIDEO SCRIPTWRITER")
+    v_topic = st.text_input("What is the video about?", key="video_input")
+    v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivation", "Storytelling", "Controversial"])
+    
+    if st.button("GENERATE FULL SCRIPT"):
+        if v_topic:
+            with st.status("Crafting Viral Narrative..."):
+                client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a viral content specialist for TikTok and Reels."},
+                        {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style. Include visual cues in [brackets] and a powerful hook."}
+                    ]
+                )
+                st.markdown(response.choices[0].message.content)
+        else:
+            st.warning("Enter a topic first.")
 
 with t3:
     if st.session_state.tier != "Agency":
         st.markdown("""
         <div class="tier-box">
-            <h2>🔒 BUSINESS MANAGER AGENT LOCKED</h2>
-            <p>Upgrade to unlock your AI Strategy Agent and automate your growth.</p>
-            <p style="font-size: 24px; color: #00f2ff;"><b>Price: £350.00</b></p>
+            <h2 style='color: #00f2ff;'>🔒 BUSINESS MANAGER AGENT LOCKED</h2>
+            <p>Upgrade to the Agency Tier to unlock your 24/7 AI Growth Strategist.</p>
+            <p style="font-size: 28px; color: #ffffff;"><b>Price: £350.00</b></p>
+            <a href="https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200" target="_blank">
+                <button style="width: 100%; background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">
+                    UPGRADE NOW & UNLOCK AGENT
+                </button>
+            </a>
         </div>
         """, unsafe_allow_html=True)
     else:
-        st.subheader("🤖 GOCOPYAI STRATEGY AGENT")
+        st.subheader("🤖 GOCOPYAI MASTER STRATEGIST")
         client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
         if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "system", "content": "You are a master agency strategist."}]
+            st.session_state.messages = [{"role": "system", "content": "You are the GoCopyAI Master Strategist. Your goal is to help the user hit £10k/month. Give actionable, no-fluff advice."}]
 
         for message in st.session_state.messages:
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        if prompt := st.chat_input("How can I help you scale?"):
+        if prompt := st.chat_input("Ask your strategist anything..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
