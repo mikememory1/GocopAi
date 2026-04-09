@@ -36,54 +36,49 @@ with st.sidebar:
 t1, t2, t3 = st.tabs(["🎯 AD GENERATOR", "🎬 VIDEO SCRIPTS", "🤖 BUSINESS AGENT"])
 
 with t1:
-    st.subheader("Generate High-Conversion Ads")
+    st.subheader("🚀 AD GENERATOR")
     prod = st.text_input("Product Name", placeholder="e.g. Luxury Watch")
-    if st.button("RUN AI STRATEGY"):
+    if st.button("RUN AD STRATEGY"):
         with st.status("Analyzing Market Psychology..."):
-            time.sleep(2)
+            time.sleep(1.5)
         st.success("Ad Script Generated!")
         st.code(f"HOOK: Why {prod} is the #1 choice in 2026. \nCTA: Link in Bio.")
 
 with t2:
-    st.subheader("🎬 AI VIDEO SCRIPT GENERATOR")
-    v_topic = st.text_input("What is your video about?", placeholder="e.g. How to scale an agency")
-    if st.button("GENERATE SCRIPT"):
+    st.subheader("🎬 VIDEO SCRIPT GENERATOR")
+    v_topic = st.text_input("Video Topic", placeholder="e.g. Agency Scaling Secrets")
+    if st.button("GENERATE VIDEO SCRIPT"):
         if v_topic:
             with st.status("Writing Viral Script..."):
-                time.sleep(2)
-            st.success("Script Ready!")
-            st.write(f"### **The Hook**\nStop scrolling if you want to know the truth about {v_topic}...")
-            st.write("### **The Meat**\nMost people fail because they lack a system. Here is the 3-step framework you need.")
-            st.write("### **Call to Action**\nLink in bio for the full breakdown!")
+                time.sleep(1.5)
+            st.write(f"### **Hook**\nEver wondered why {v_topic} is the key to success?")
+            st.write("### **Body**\nMost people miss the obvious. Here is the framework...")
+            st.write("### **CTA**\nFollow for more gems!")
         else:
-            st.warning("Please enter a topic first.")
+            st.warning("Please enter a topic.")
 
 with t3:
     if st.session_state.tier != "Agency":
         st.markdown("""
         <div class="tier-box">
             <h2>🔒 BUSINESS MANAGER AGENT LOCKED</h2>
-            <p>The Agency Tier Agent manages your WarriorPlus affiliates and automates your sales 24/7.</p>
+            <p>Upgrade to unlock your AI Strategy Agent and automate your growth.</p>
             <p style="font-size: 24px; color: #00f2ff;"><b>Price: £350.00</b></p>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.subheader("🤖 GOCOPYAI STRATEGY AGENT")
-        from openai import OpenAI
-        
         client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
         if "messages" not in st.session_state:
-            st.session_state.messages = [
-                {"role": "system", "content": "You are the GoCopyAI Master Strategist. Help the user scale their agency to £10k/month. Be bold, tactical, and concise."}
-            ]
+            st.session_state.messages = [{"role": "system", "content": "You are a master agency strategist."}]
 
         for message in st.session_state.messages:
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        if prompt := st.chat_input("Ask your agent anything..."):
+        if prompt := st.chat_input("How can I help you scale?"):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
