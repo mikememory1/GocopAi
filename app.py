@@ -53,7 +53,7 @@ with t3:
             <p style="font-size: 24px; color: #00f2ff;"><b>Price: £350.00</b></p>
         </div>
         """, unsafe_allow_html=True)
-   else:
+    else:
         st.subheader("🤖 GOCOPYAI STRATEGY AGENT")
         from openai import OpenAI
         
