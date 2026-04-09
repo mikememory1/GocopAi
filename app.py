@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-
+from openai import OpenAI
 # --- PREMIUM BRANDING ---
 st.set_page_config(page_title="GocopAi Agency Pro", layout="wide")
 
@@ -53,8 +53,35 @@ with t3:
             <p style="font-size: 24px; color: #00f2ff;"><b>Price: £350.00</b></p>
         </div>
         """, unsafe_allow_html=True)
-    else:
-        st.subheader("🤖 AGENT COMMAND CENTER")
-        st.info("Agent Status: ACTIVE & MONITORING SALES")
-        st.metric("Total Revenue", "£1,450", "+£350 today")
-        st.text_area("Live Log", "12:10 - Sent License Key to buyer@email.com...")
+   else:
+        st.subheader("🤖 GOCOPYAI STRATEGY AGENT")
+        from openai import OpenAI
+        
+        # This line pulls the key you just saved in Secrets
+        client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+        if "messages" not in st.session_state:
+            st.session_state.messages = [
+                {"role": "system", "content": "You are the GoCopyAI Master Strategist. Help the user scale their agency to £10k/month. Be bold, tactical, and concise."}
+            ]
+
+        # Display chat history
+        for message in st.session_state.messages:
+            if message["role"] != "system":
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+        # Chat input box
+        if prompt := st.chat_input("Ask your agent anything..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=st.session_state.messages
+                )
+                answer = response.choices[0].message.content
+                st.markdown(answer)
+                st.session_state.messages.append({"role": "assistant", "content": answer})
