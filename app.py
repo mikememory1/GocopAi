@@ -82,13 +82,14 @@ with t3:
         st.markdown("""
         <div class="tier-box">
             <h2 style='color: #00f2ff;'>🔒 BUSINESS MANAGER AGENT LOCKED</h2>
-            <p>Upgrade to the Agency Tier to unlock your 24/7 AI Growth Strategist.</p>
-            <p style="font-size: 28px; color: #ffffff;"><b>Price: £350.00</b></p>
-            <a href="https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200" target="_blank">
-                <button style="width: 100%; background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">
-                    UPGRADE NOW & UNLOCK AGENT
+            <p>Upgrade to the Agency Tier to unlock your 24/7 AI Growth Strategist and scale to £10k/month.</p>
+            <p style="font-size: 28px; color: #ffffff;"><b>Price: £300.00</b></p>
+            <a href="https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200" target="_blank" style="text-decoration: none;">
+                <button style="width: 100%; background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 18px; font-weight: bold; box-shadow: 0px 4px 15px rgba(255, 0, 204, 0.3);">
+                    🚀 UPGRADE NOW & UNLOCK AGENT
                 </button>
             </a>
+            <p style="font-size: 12px; color: #666; margin-top: 15px;">One-time payment • Lifetime Access</p>
         </div>
         """, unsafe_allow_html=True)
     else:
