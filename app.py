@@ -45,17 +45,28 @@ with t1:
         st.code(f"HOOK: Why {prod} is the #1 choice in 2026. \nCTA: Link in Bio.")
 
 with t2:
-    st.subheader("🎬 VIDEO SCRIPT GENERATOR")
-    v_topic = st.text_input("Video Topic", placeholder="e.g. Agency Scaling Secrets")
-    if st.button("GENERATE VIDEO SCRIPT"):
+    st.subheader("🎬 AI VIDEO SCRIPT GENERATOR (PRO)")
+    v_topic = st.text_input("What is the video topic?", placeholder="e.g. 3 ways to get clients with cold DMing")
+    
+    if st.button("GENERATE FULL SCRIPT"):
         if v_topic:
-            with st.status("Writing Viral Script..."):
-                time.sleep(1.5)
-            st.write(f"### **Hook**\nEver wondered why {v_topic} is the key to success?")
-            st.write("### **Body**\nMost people miss the obvious. Here is the framework...")
-            st.write("### **CTA**\nFollow for more gems!")
+            with st.status("AI is writing your viral script..."):
+                # This calls OpenAI just like your Business Agent does
+                client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a viral TikTok and Reel scriptwriter. Write engaging, high-retention scripts with visual cues."},
+                        {"role": "user", "content": f"Write a 60-second viral video script about: {v_topic}. Include a strong hook, 3 value points, and a CTA."}
+                    ]
+                )
+                full_script = response.choices[0].message.content
+            
+            st.success("Script Generated!")
+            st.markdown("---")
+            st.markdown(full_script) # This will now show the full AI response
         else:
-            st.warning("Please enter a topic.")
+            st.warning("Please enter a topic first.")
 
 with t3:
     if st.session_state.tier != "Agency":
