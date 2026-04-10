@@ -148,7 +148,7 @@ with t5:
         <div style="background: rgba(0, 255, 136, 0.1); border: 2px solid #00ff88; padding: 20px; border-radius: 10px; text-align: center;">
             <h3 style='color: #00ff88;'>🔍 SEO PRO SUITE</h3>
             <p>Keyword extraction & competitor analysis. <b>Price: £49.99</b></p>
-            <a href="YOUR_STRIPE_LINK_49" target="_blank"><button style="background: #00ff88; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY SEO PRO KEY</button></a>
+            <a href="https://buy.stripe.com/00w9AT03I3x7epJbh04F202" target="_blank"><button style="background: #00ff88; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY SEO PRO KEY</button></a>
         </div>
         """, unsafe_allow_html=True)
         
