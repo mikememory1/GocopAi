@@ -67,18 +67,22 @@ with t2:
     v_topic = st.text_input("What is the video about?", key="video_input")
     v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivation", "Storytelling", "Controversial"])
     
-    if st.button("GENERATE FULL SCRIPT"):
-        if v_topic:
-  
-    with st.status("Crafting Viral Narrative..."):
-            client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a viral content specialist for TikTok and Reels."},
-                    {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style."}
-                ]
-            )
+if st.button("GENERATE FULL SCRIPT"):
+            if v_topic:
+                with st.status("Crafting Viral Narrative..."):
+                    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+                    response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": "You are a viral content specialist for TikTok and Reels."},
+                            {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style."}
+                        ]
+                    )
+                
+                # This line is outside the status box so you can see it!
+                st.markdown(response.choices[0].message.content)
+            else:
+                st.warning("Please enter a topic first.")
         
         # PASTE IT HERE (Aligned with the 'with' above)
         st.markdown(response.choices[0].message.content) 
