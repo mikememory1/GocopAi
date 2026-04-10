@@ -70,7 +70,7 @@ with t2:
     if st.button("GENERATE FULL SCRIPT"):
         if v_topic:
   
-with st.status("Crafting Viral Narrative..."):
+    with st.status("Crafting Viral Narrative..."):
             client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
