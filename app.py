@@ -69,16 +69,19 @@ with t2:
     
     if st.button("GENERATE FULL SCRIPT"):
         if v_topic:
-            with st.status("Crafting Viral Narrative..."):
-                client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a viral content specialist for TikTok and Reels."},
-                        {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style. Include visual cues in [brackets] and a powerful hook."}
-                    ]
-                )
-                st.markdown(response.choices[0].message.content)
+  
+with st.status("Crafting Viral Narrative..."):
+            client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a viral content specialist for TikTok and Reels."},
+                    {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style."}
+                ]
+            )
+        
+        # PASTE IT HERE (Aligned with the 'with' above)
+        st.markdown(response.choices[0].message.content) 
         else:
             st.warning("Enter a topic first.")
 
