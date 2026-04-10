@@ -18,7 +18,11 @@ st.markdown("""
 
 # --- THE SALES ENGINE ---
 if 'tier' not in st.session_state: st.session_state.tier = "Standard"
-
+# Initialize upsell states
+if "auto_pilot_unlocked" not in st.session_state:
+    st.session_state.auto_pilot_unlocked = False
+if "seo_pro_unlocked" not in st.session_state:
+    st.session_state.seo_pro_unlocked = False
 with st.sidebar:
     st.title("⚡ MEMBER ACCESS")
     key = st.text_input("Enter License Key", type="password")
@@ -33,7 +37,7 @@ with st.sidebar:
         st.markdown("[🚀 UPGRADE TO AGENCY (£300)](https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200)") 
 
 # --- THE APP TABS ---
-t1, t2, t3 = st.tabs(["🎯 AD GENERATOR", "🎬 VIDEO SCRIPTS", "🤖 BUSINESS AGENT"])
+t1, t2, t3, t4, t5 = st.tabs(["🎯 AD GENERATOR", "🎬 VIDEO SCRIPTS", "🤖 AGENCY AGENT", "📲 AUTO-PILOT", "🔍 SEO PRO"])
 
 with t1:
     st.subheader("🎯 PRO AD COPY GENERATOR")
@@ -117,3 +121,42 @@ with t3:
                 answer = response.choices[0].message.content
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
+# --- TAB 4: AUTO-PILOT (LOCKED) ---
+with t4:
+    if not st.session_state.auto_pilot_unlocked:
+        st.markdown("""
+        <div style="background: rgba(255, 0, 204, 0.1); border: 2px solid #ff00cc; padding: 20px; border-radius: 10px; text-align: center;">
+            <h3 style='color: #ff00cc;'>📲 AUTO-PILOT ACTIVATION</h3>
+            <p>Post instantly to TikTok & Instagram. <b>Price: £69.99</b></p>
+            <a href="YOUR_STRIPE_LINK_69" target="_blank"><button style="background: #ff00cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY ACTIVATION KEY</button></a>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        ap_key = st.text_input("Enter Auto-Pilot Key", type="password", key="ap_input")
+        if ap_key == "POST69":
+            st.session_state.auto_pilot_unlocked = True
+            st.success("Auto-Pilot Unlocked!")
+            st.rerun()
+    else:
+        st.header("📲 Auto-Pilot Dashboard")
+        st.info("Direct Publishing Enabled. Select a script below to post.")
+
+# --- TAB 5: SEO PRO (LOCKED) ---
+with t5:
+    if not st.session_state.seo_pro_unlocked:
+        st.markdown("""
+        <div style="background: rgba(0, 255, 136, 0.1); border: 2px solid #00ff88; padding: 20px; border-radius: 10px; text-align: center;">
+            <h3 style='color: #00ff88;'>🔍 SEO PRO SUITE</h3>
+            <p>Keyword extraction & competitor analysis. <b>Price: £49.99</b></p>
+            <a href="YOUR_STRIPE_LINK_49" target="_blank"><button style="background: #00ff88; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY SEO PRO KEY</button></a>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        seo_key = st.text_input("Enter SEO Pro Key", type="password", key="seo_input")
+        if seo_key == "SEO49":
+            st.session_state.seo_pro_unlocked = True
+            st.success("SEO Pro Unlocked!")
+            st.rerun()
+    else:
+        st.header("🔍 SEO Intelligence")
+        st.text_input("Enter URL to analyze")
