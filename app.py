@@ -79,16 +79,10 @@ if st.button("GENERATE FULL SCRIPT"):
                         ]
                     )
                 
-                # This line is outside the status box so you can see it!
+                # This shows the script on the page
                 st.markdown(response.choices[0].message.content)
             else:
                 st.warning("Please enter a topic first.")
-        
-        # PASTE IT HERE (Aligned with the 'with' above)
-        st.markdown(response.choices[0].message.content) 
-        else:
-            st.warning("Enter a topic first.")
-
 with t3:
     if st.session_state.tier != "Agency":
         st.markdown("""
