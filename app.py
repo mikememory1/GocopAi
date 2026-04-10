@@ -128,7 +128,7 @@ with t4:
         <div style="background: rgba(255, 0, 204, 0.1); border: 2px solid #ff00cc; padding: 20px; border-radius: 10px; text-align: center;">
             <h3 style='color: #ff00cc;'>📲 AUTO-PILOT ACTIVATION</h3>
             <p>Post instantly to TikTok & Instagram. <b>Price: £69.99</b></p>
-            <a href="YOUR_STRIPE_LINK_69" target="_blank"><button style="background: #ff00cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY ACTIVATION KEY</button></a>
+            <a href="https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201"_blank"><button style="background: #ff00cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY ACTIVATION KEY</button></a>
         </div>
         """, unsafe_allow_html=True)
         
