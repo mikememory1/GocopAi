@@ -138,7 +138,7 @@ auth_url = (
     f"&response_type=code"
     f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
 )
-)
+
 
 # --- TAB 4: AUTO-PILOT (LOCKED) ---
 
