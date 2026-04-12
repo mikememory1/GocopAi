@@ -132,11 +132,12 @@ redirect_uri = st.secrets["TIKTOK_REDIRECT_URI"]
 scope = "user.info.basic,video.upload,video.publish"
 
 auth_url = (
-    f"https://www.tiktok.com/auth/authorize/"
+    f"https://www.tiktok.com/v2/auth/authorize/"
     f"?client_key={client_key}"
     f"&scope={scope}"
     f"&response_type=code"
     f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
+)
 )
 
 # --- TAB 4: AUTO-PILOT (LOCKED) ---
