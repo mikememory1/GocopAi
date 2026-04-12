@@ -124,6 +124,23 @@ with t3:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
 # --- TAB 4: AUTO-PILOT (LOCKED) ---
+import urllib.parse
+
+# This builds the bridge between your app and TikTok
+client_key = st.secrets["TIKTOK_CLIENT_KEY"]
+redirect_uri = st.secrets["TIKTOK_REDIRECT_URI"]
+scope = "user.info.basic,video.upload,video.publish"
+
+auth_url = (
+    f"https://www.tiktok.com/auth/authorize/"
+    f"?client_key={client_key}"
+    f"&scope={scope}"
+    f"&response_type=code"
+    f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
+)
+
+# --- TAB 4: AUTO-PILOT (LOCKED) ---
+
 with t4:
     if not st.session_state.auto_pilot_unlocked:
         st.markdown("""
@@ -140,8 +157,28 @@ with t4:
             st.success("Auto-Pilot Unlocked!")
             st.rerun()
     else:
-        st.header("📲 Auto-Pilot Dashboard")
-        st.info("Direct Publishing Enabled. Select a script below to post.")
+      # New Auto-Pilot Content for Phase 7 & 9
+        st.header("📲 Auto-Pilot Command Centre")
+        st.write("Connect your social media accounts to enable one-click publishing.")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.subheader("TikTok")
+            # This uses the secrets you just saved in Streamlit
+            st.link_button("🔐 Connect TikTok", auth_url, use_container_width=True)
+            
+        with col2:
+            st.subheader("Instagram")
+            st.button("🔐 Connect IG (Coming Soon)", disabled=True, use_container_width=True)
+            
+        with col3:
+            st.subheader("YouTube")
+            st.button("🔐 Connect YT (Coming Soon)", disabled=True, use_container_width=True)
+
+        st.divider()
+        st.subheader("Final Review & Blast")
+        st.info("Once connected, your generated scripts will appear here for instant publishing.")
 
 # --- TAB 5: SEO PRO (LOCKED) ---
 with t5:
