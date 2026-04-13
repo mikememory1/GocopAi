@@ -1,6 +1,25 @@
 import streamlit as st
 import time
 from openai import OpenAI
+from fpdf import FPDF
+import io
+
+def create_pdf(script, score, keywords):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="GoCopyAI Agency Pro Report", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.ln(10)
+    pdf.cell(200, 10, txt=f"SEO Performance Score: {score}", ln=True)
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, txt=f"Keywords: {keywords}")
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt="Final Video Script:", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, txt=script)
+    return pdf.output(dest='S').encode('latin-1')
 # --- PREMIUM BRANDING ---
 st.set_page_config(page_title="GocopAi Agency Pro", layout="wide")
 
@@ -101,6 +120,49 @@ if 'generated_script' in st.session_state:
                 st.success("✅ Success! Check your TikTok drafts.")
         else:
             st.error("Please click 'Connect TikTok' at the top of the page first!")
+           # --- TAB 2: VIDEO SCRIPTS ---
+with t2:
+    st.header("🎬 Viral Video Scriptwriter")
+    
+    topic = st.text_input("What is the video about?", placeholder="e.g. How to scale a SaaS in 2026")
+    style = st.selectbox("Video Style", ["Educational", "Hype/Viral", "Storytelling", "Comedy"])
+    
+    if st.button("GENERATE FULL SCRIPT", use_container_width=True):
+        if topic:
+            with st.spinner("Crafting your viral script..."):
+                # Call OpenAI to generate the script
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": f"You are a viral video scriptwriter. Style: {style}"},
+                        {"role": "user", "content": f"Write a 60-second video script about: {topic}"}
+                    ]
+                )
+                script = response.choices[0].message.content
+                st.session_state['generated_script'] = script # Saves for SEO & Agent tabs
+                
+                st.subheader("Your Generated Script")
+                st.write(script)
+                st.success("Script generated! You can now check SEO PRO or talk to the AGENT.")
+        else:
+            st.error("Please enter a topic first!")
+
+    # --- NEW: AI VOICEOVER SECTION ---
+    if 'generated_script' in st.session_state:
+        st.divider()
+        st.subheader("🎙️ AI Voiceover Studio")
+        if st.button("Generate Audio File", use_container_width=True):
+            with st.status("Converting text to speech..."):
+                audio_response = client.audio.speech.create(
+                    model="tts-1",
+                    voice="onyx", 
+                    input=st.session_state['generated_script']
+                )
+                # This turns the API response into a playable file in Streamlit
+                audio_data = io.BytesIO(audio_response.content)
+                st.audio(audio_data, format="audio/mp3")
+                st.success("Voiceover Ready!")
+             st.divider()
 
 # --- TAB 3: STRATEGIST ---
 
@@ -237,6 +299,24 @@ with t5:
             with col2:
                 st.subheader("Meta Description")
                 st.code(f"Check out this viral video about {st.session_state['generated_script'][:20]}...")
+       st.divider()
+            # Generate the PDF data using the function at the top of your script
+            try:
+                report_pdf = create_pdf(
+                    st.session_state['generated_script'], 
+                    "85/100", 
+                    "Viral AI, Content Hacks, Marketing 2026"
+                )
+                
+                st.download_button(
+                    label="📥 Export Full Content Report (PDF)",
+                    data=report_pdf,
+                    file_name="gocopy_agency_report.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+            except Exception as e:
+                st.error(f"PDF Error: Ensure 'fpdf' is in your requirements.txt! ({e})")
         else:
             st.warning("⚠️ No script found. Go to 'Video Scripts' and generate one first!")
             
