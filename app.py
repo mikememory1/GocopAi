@@ -78,43 +78,30 @@ if st.button("GENERATE FULL SCRIPT"):
                             {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style."}
                         ]
                     )
-                
-             # 1. Save the AI response to the app's memory
+# Save and show the script content
         script_content = response.choices[0].message.content
         st.session_state['generated_script'] = script_content
-        
-        # 2. Show the script on the page immediately
         st.markdown(script_content)
-
-# 3. The Safety Gate: Only show the TikTok section if a script exists in memory
+# --- TIKTOK POSTING GATE (Must touch left edge) ---
 if 'generated_script' in st.session_state:
     st.divider()
     st.subheader("🚀 Send to TikTok Drafts")
     
-    # 4. Use the saved script in the editable text area
     final_script_text = st.text_area(
         "Final Polish:", 
         value=st.session_state['generated_script'], 
         height=250
     )
     
-    # 5. The Post Button logic
     if st.button("SEND TO TIKTOK"):
         if "code" in st.query_params:
             with st.status("Connecting to TikTok API..."):
                 st.balloons()
                 st.success("✅ Success! Check your TikTok drafts.")
         else:
-            st.error("Please connect your TikTok account at the top first!") 
-    
-    if st.button("SEND TO TIKTOK"):
-        if "code" in st.query_params:
-            with st.status("Connecting to TikTok API..."):
-                st.balloons()
-                st.success("✅ Success! Open TikTok on your phone to find this in your drafts.")
-        else:
             st.error("Please click 'Connect TikTok' at the top of the page first!")
-           
+
+# --- TAB 3: STRATEGIST ---
 with t3:
     if st.session_state.tier != "Agency":
         st.markdown("""
@@ -132,10 +119,8 @@ with t3:
         """, unsafe_allow_html=True)
     else:
         st.subheader("🤖 GOCOPYAI MASTER STRATEGIST")
-        client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
         if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "system", "content": "You are the GoCopyAI Master Strategist. Your goal is to help the user hit £10k/month. Give actionable, no-fluff advice."}]
+            st.session_state.messages = [{"role": "system", "content": "You are the GoCopyAI Master Strategist. Give actionable, no-fluff advice."}]
 
         for message in st.session_state.messages:
             if message["role"] != "system":
@@ -155,10 +140,9 @@ with t3:
                 answer = response.choices[0].message.content
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
-# --- TAB 4: AUTO-PILOT (LOCKED) ---
-import urllib.parse
 
-# This builds the bridge between your app and TikTok
+# --- TAB 4: AUTO-PILOT ---
+import urllib.parse
 client_key = st.secrets["TIKTOK_CLIENT_KEY"]
 redirect_uri = st.secrets["TIKTOK_REDIRECT_URI"]
 scope = "user.info.basic,video.upload,video.publish"
@@ -171,16 +155,13 @@ auth_url = (
     f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
 )
 
-
-# --- TAB 4: AUTO-PILOT (LOCKED) ---
-
 with t4:
     if not st.session_state.auto_pilot_unlocked:
         st.markdown("""
         <div style="background: rgba(255, 0, 204, 0.1); border: 2px solid #ff00cc; padding: 20px; border-radius: 10px; text-align: center;">
             <h3 style='color: #ff00cc;'>📲 AUTO-PILOT ACTIVATION</h3>
             <p>Post instantly to TikTok & Instagram. <b>Price: £69.99</b></p>
-            <a href="https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201"_blank"><button style="background: #ff00cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY ACTIVATION KEY</button></a>
+            <a href="https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201" target="_blank"><button style="background: #ff00cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY ACTIVATION KEY</button></a>
         </div>
         """, unsafe_allow_html=True)
         
@@ -190,30 +171,19 @@ with t4:
             st.success("Auto-Pilot Unlocked!")
             st.rerun()
     else:
-      # New Auto-Pilot Content for Phase 7 & 9
         st.header("📲 Auto-Pilot Command Centre")
-        st.write("Connect your social media accounts to enable one-click publishing.")
-
         col1, col2, col3 = st.columns(3)
-
         with col1:
             st.subheader("TikTok")
-            # This uses the secrets you just saved in Streamlit
             st.link_button("🔐 Connect TikTok", auth_url, use_container_width=True)
-            
         with col2:
             st.subheader("Instagram")
             st.button("🔐 Connect IG (Coming Soon)", disabled=True, use_container_width=True)
-            
         with col3:
             st.subheader("YouTube")
             st.button("🔐 Connect YT (Coming Soon)", disabled=True, use_container_width=True)
 
-        st.divider()
-        st.subheader("Final Review & Blast")
-        st.info("Once connected, your generated scripts will appear here for instant publishing.")
-
-# --- TAB 5: SEO PRO (LOCKED) ---
+# --- TAB 5: SEO PRO ---
 with t5:
     if not st.session_state.seo_pro_unlocked:
         st.markdown("""
