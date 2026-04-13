@@ -161,8 +161,8 @@ with t4:
         # ADD THIS LINE DIRECTLY BELOW:
         ap_key = st.text_input("Unlock Key", type="password", key="ap_unlock_input")
         if ap_key == "POST69":
-            st.session_state.auto_pilot_unlocked = True
-             st.rerun() 
+               st.session_state.auto_pilot_unlocked = True
+               st.rerun() 
     else:
         st.header("📲 Auto-Pilot Command Centre")
         st.info("Connected platforms allow one-click distribution from your Scriptwriter.")
