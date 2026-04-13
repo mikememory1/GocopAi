@@ -198,21 +198,4 @@ with t4:
             else:
                 st.error("Please generate a script in the Scriptwriter first!")
             
-        with col3:
-            st.subheader("YouTube")
-            # This is now an active link!
-            st.link_button("🎥 Connect YT", yt_auth_url, use_container_width=True, type="primary")
-            st.caption("Post to Shorts")
-
-        st.divider()
-        st.subheader("🚀 Global Multi-Post")
-        if st.button("BLAST TO ALL CONNECTED PLATFORMS", use_container_width=True):
-            if 'generated_script' in st.session_state:
-                with st.status("Syncing Content..."):
-                    st.write("Checking TikTok... ✅")
-                    st.write("Checking Instagram... ✅")
-                    st.write("Checking YouTube... ✅")
-                    st.balloons()
-                st.success("Sent to all Drafts!")
-            else:
-                st.error("Generate a script first!")
+    
