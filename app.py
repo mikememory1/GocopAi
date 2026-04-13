@@ -79,25 +79,41 @@ if st.button("GENERATE FULL SCRIPT"):
                         ]
                     )
                 
-                # This shows the script on the page
-                st.markdown(response.choices[0].message.content)
-                # --- TIKTOK POSTING SECTION ---
-st.divider()
-st.subheader("🚀 Send to TikTok Drafts")
+             # 1. Save the AI response to the app's memory
+        script_content = response.choices[0].message.content
+        st.session_state['generated_script'] = script_content
+        
+        # 2. Show the script on the page immediately
+        st.markdown(script_content)
 
-# This captures the script so you can edit it before sending
-final_script_text = st.text_area("Final Polish:", value=response.choices[0].message.content, height=250)
-
-if st.button("SEND TO TIKTOK"):
-    # This checks if the user actually clicked the Authorize button earlier
-    if "code" in st.query_params:
-        with st.status("Connecting to TikTok API..."):
-            # This is the simplified 'Draft' trigger
-            # In a full setup, this is where your 'requests.post' logic goes
-            st.balloons()
-            st.success("✅ Success! Open TikTok on your phone to find this in your drafts.")
-    else:
-        st.error("Please click 'Connect TikTok' at the top of the page first!")
+# 3. The Safety Gate: Only show the TikTok section if a script exists in memory
+if 'generated_script' in st.session_state:
+    st.divider()
+    st.subheader("🚀 Send to TikTok Drafts")
+    
+    # 4. Use the saved script in the editable text area
+    final_script_text = st.text_area(
+        "Final Polish:", 
+        value=st.session_state['generated_script'], 
+        height=250
+    )
+    
+    # 5. The Post Button logic
+    if st.button("SEND TO TIKTOK"):
+        if "code" in st.query_params:
+            with st.status("Connecting to TikTok API..."):
+                st.balloons()
+                st.success("✅ Success! Check your TikTok drafts.")
+        else:
+            st.error("Please connect your TikTok account at the top first!") 
+    
+    if st.button("SEND TO TIKTOK"):
+        if "code" in st.query_params:
+            with st.status("Connecting to TikTok API..."):
+                st.balloons()
+                st.success("✅ Success! Open TikTok on your phone to find this in your drafts.")
+        else:
+            st.error("Please click 'Connect TikTok' at the top of the page first!")
            
 with t3:
     if st.session_state.tier != "Agency":
