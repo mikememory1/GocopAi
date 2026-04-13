@@ -214,9 +214,8 @@ with t5:
                 
             with col2:
                 st.subheader("Meta Description")
-                # This pulls the first 20 characters of your actual script!
                 st.code(f"Check out this viral video about {st.session_state['generated_script'][:20]}...")
-         else:
+        else:
             st.warning("⚠️ No script found. Go to 'Video Scripts' and generate one first!")
             
     else:
