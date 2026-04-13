@@ -182,10 +182,6 @@ with t4:
             st.link_button("📸 Connect IG", insta_auth_url, use_container_width=True, type="primary")
             # Continuing from Line 177 in your editor...
             st.caption("Post to Reels & Stories")
-        with col3:
-            st.subheader("YouTube")
-            st.link_button("🎥 Connect YT", yt_auth_url, use_container_width=True, type="primary")
-            st.caption("Post to Shorts")
 
         st.divider()
         st.subheader("🚀 Global Multi-Post")
