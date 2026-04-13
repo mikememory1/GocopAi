@@ -181,6 +181,7 @@ with t4:
             # This is now an active link!
             st.link_button("📸 Connect IG", insta_auth_url, use_container_width=True, type="primary")
             # Continuing from Line 177 in your editor...
+            st.caption("Post to Reels & Stories")
         with col3:
             st.subheader("YouTube")
             st.link_button("🎥 Connect YT", yt_auth_url, use_container_width=True, type="primary")
@@ -200,7 +201,6 @@ with t4:
                 st.success("Drafts sent successfully to all platforms!")
             else:
                 st.error("Please generate a script in the Scriptwriter first!")
-            st.caption("Post to Reels & Stories")
             
         with col3:
             st.subheader("YouTube")
