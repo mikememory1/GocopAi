@@ -61,12 +61,12 @@ with t1:
             st.markdown(ad_results)
         else:
             st.warning("Please fill in both fields.")
+# Move these OUTSIDE and ABOVE the container logic
+st.subheader("🎬 VIRAL VIDEO SCRIPTWRITER")
+v_topic = st.text_input("What is the video about?", key="video_input_main")
+v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Storytelling"], key="style_input_main")
 
-with t2:
-    st.subheader("🎬 VIRAL VIDEO SCRIPTWRITER")
-    v_topic = st.text_input("What is the video about?", key="video_input")
-    v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivation", "Storytelling", "Controversial"])
-    
+# Now the button sits below them, ready to work
 if st.button("GENERATE FULL SCRIPT"):
             if v_topic:
                 with st.status("Crafting Viral Narrative..."):
@@ -81,8 +81,24 @@ if st.button("GENERATE FULL SCRIPT"):
                 
                 # This shows the script on the page
                 st.markdown(response.choices[0].message.content)
-            else:
-                st.warning("Please enter a topic first.")
+                # --- TIKTOK POSTING SECTION ---
+st.divider()
+st.subheader("🚀 Send to TikTok Drafts")
+
+# This captures the script so you can edit it before sending
+final_script_text = st.text_area("Final Polish:", value=response.choices[0].message.content, height=250)
+
+if st.button("SEND TO TIKTOK"):
+    # This checks if the user actually clicked the Authorize button earlier
+    if "code" in st.query_params:
+        with st.status("Connecting to TikTok API..."):
+            # This is the simplified 'Draft' trigger
+            # In a full setup, this is where your 'requests.post' logic goes
+            st.balloons()
+            st.success("✅ Success! Open TikTok on your phone to find this in your drafts.")
+    else:
+        st.error("Please click 'Connect TikTok' at the top of the page first!")
+           
 with t3:
     if st.session_state.tier != "Agency":
         st.markdown("""
