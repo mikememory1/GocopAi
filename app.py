@@ -103,15 +103,16 @@ if 'generated_script' in st.session_state:
             st.error("Please click 'Connect TikTok' at the top of the page first!")
 
 # --- TAB 3: STRATEGIST ---
+
 with t3:
     if st.session_state.tier != "Agency":
+        # Your custom HTML "Locked" box from image_1dc962.png
         st.markdown("""
-        <div class="tier-box">
-            <h2 style='color: #00f2ff;'>🔒 BUSINESS MANAGER AGENT LOCKED</h2>
+        <div class='tier-box'>
+            <h2 style='color: #00f2ff;'>🔓 BUSINESS MANAGER AGENT LOCKED</h2>
             <p>Upgrade to the Agency Tier to unlock your 24/7 AI Growth Strategist.</p>
-            <p style="font-size: 28px; color: #ffffff;"><b>Price: £300.00</b></p>
-            <a href="https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200" target="_blank" style="text-decoration: none;">
-                <button style="width: 100%; background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 18px; font-weight: bold;">
+            <a href="https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200" target="_blank">
+                <button style="width: 100%; background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; padding: 10px; border-radius: 5px; border: none;">
                     🚀 UPGRADE NOW & UNLOCK AGENT
                 </button>
             </a>
@@ -119,22 +120,39 @@ with t3:
         """, unsafe_allow_html=True)
     else:
         st.subheader("🤖 GOCOPYAI MASTER STRATEGIST")
+        
+        # Initialize chat history if it doesn't exist
         if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "system", "content": "You are the GoCopyAI Master Strategist."}]
+            st.session_state.messages = [{"role": "system", "content": "You are the GoCopyAI Master Strategist. Expert in viral marketing."}]
+
+        # Display chat messages from history on app rerun
         for message in st.session_state.messages:
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
+
+        # React to user input
         if prompt := st.chat_input("Ask your strategist anything..."):
+            # Display user message in chat message container
+            st.chat_message("user").markdown(prompt)
+            # Add user message to chat history
             st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            with st.chat_message("assistant"):
-                response = client.chat.completions.create(model="gpt-3.5-turbo", messages=st.session_state.messages)
+
+   # Get AI Response (Make sure this starts at the same indent as line 142)
+        with st.chat_message("assistant"):
+            try:
+                # Use the client defined at the top of your script
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+                )
                 answer = response.choices[0].message.content
                 st.markdown(answer)
+                
+                # Add assistant response to history
                 st.session_state.messages.append({"role": "assistant", "content": answer})
-
+            except Exception as e:
+                st.error(f"Agent connection lost: {e}")      
 # --- TAB 4: AUTO-PILOT ---
 import urllib.parse
 client_key = st.secrets["TIKTOK_CLIENT_KEY"]
