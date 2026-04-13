@@ -82,6 +82,7 @@ if st.button("GENERATE FULL SCRIPT"):
         script_content = response.choices[0].message.content
         st.session_state['generated_script'] = script_content
         st.markdown(script_content)
+
 # --- TIKTOK POSTING GATE (Must touch left edge) ---
 if 'generated_script' in st.session_state:
     st.divider()
@@ -107,36 +108,29 @@ with t3:
         st.markdown("""
         <div class="tier-box">
             <h2 style='color: #00f2ff;'>🔒 BUSINESS MANAGER AGENT LOCKED</h2>
-            <p>Upgrade to the Agency Tier to unlock your 24/7 AI Growth Strategist and scale to £10k/month.</p>
+            <p>Upgrade to the Agency Tier to unlock your 24/7 AI Growth Strategist.</p>
             <p style="font-size: 28px; color: #ffffff;"><b>Price: £300.00</b></p>
             <a href="https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200" target="_blank" style="text-decoration: none;">
-                <button style="width: 100%; background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 18px; font-weight: bold; box-shadow: 0px 4px 15px rgba(255, 0, 204, 0.3);">
+                <button style="width: 100%; background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 18px; font-weight: bold;">
                     🚀 UPGRADE NOW & UNLOCK AGENT
                 </button>
             </a>
-            <p style="font-size: 12px; color: #666; margin-top: 15px;">One-time payment • Lifetime Access</p>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.subheader("🤖 GOCOPYAI MASTER STRATEGIST")
         if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "system", "content": "You are the GoCopyAI Master Strategist. Give actionable, no-fluff advice."}]
-
+            st.session_state.messages = [{"role": "system", "content": "You are the GoCopyAI Master Strategist."}]
         for message in st.session_state.messages:
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
-
         if prompt := st.chat_input("Ask your strategist anything..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
-
             with st.chat_message("assistant"):
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=st.session_state.messages
-                )
+                response = client.chat.completions.create(model="gpt-3.5-turbo", messages=st.session_state.messages)
                 answer = response.choices[0].message.content
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
@@ -146,25 +140,11 @@ import urllib.parse
 client_key = st.secrets["TIKTOK_CLIENT_KEY"]
 redirect_uri = st.secrets["TIKTOK_REDIRECT_URI"]
 scope = "user.info.basic,video.upload,video.publish"
-
-auth_url = (
-    f"https://www.tiktok.com/v2/auth/authorize/"
-    f"?client_key={client_key}"
-    f"&scope={scope}"
-    f"&response_type=code"
-    f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
-)
+auth_url = (f"https://www.tiktok.com/v2/auth/authorize/?client_key={client_key}&scope={scope}&response_type=code&redirect_uri={urllib.parse.quote(redirect_uri)}")
 
 with t4:
     if not st.session_state.auto_pilot_unlocked:
-        st.markdown("""
-        <div style="background: rgba(255, 0, 204, 0.1); border: 2px solid #ff00cc; padding: 20px; border-radius: 10px; text-align: center;">
-            <h3 style='color: #ff00cc;'>📲 AUTO-PILOT ACTIVATION</h3>
-            <p>Post instantly to TikTok & Instagram. <b>Price: £69.99</b></p>
-            <a href="https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201" target="_blank"><button style="background: #ff00cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY ACTIVATION KEY</button></a>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div style="background: rgba(255, 0, 204, 0.1); border: 2px solid #ff00cc; padding: 20px; border-radius: 10px; text-align: center;"><h3 style="color: #ff00cc;">📲 AUTO-PILOT ACTIVATION</h3><p>Price: £69.99</p><a href="https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201" target="_blank"><button style="background: #ff00cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY ACTIVATION KEY</button></a></div>', unsafe_allow_html=True)
         ap_key = st.text_input("Enter Auto-Pilot Key", type="password", key="ap_input")
         if ap_key == "POST69":
             st.session_state.auto_pilot_unlocked = True
@@ -186,14 +166,7 @@ with t4:
 # --- TAB 5: SEO PRO ---
 with t5:
     if not st.session_state.seo_pro_unlocked:
-        st.markdown("""
-        <div style="background: rgba(0, 255, 136, 0.1); border: 2px solid #00ff88; padding: 20px; border-radius: 10px; text-align: center;">
-            <h3 style='color: #00ff88;'>🔍 SEO PRO SUITE</h3>
-            <p>Keyword extraction & competitor analysis. <b>Price: £49.99</b></p>
-            <a href="https://buy.stripe.com/00w9AT03I3x7epJbh04F202" target="_blank"><button style="background: #00ff88; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY SEO PRO KEY</button></a>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div style="background: rgba(0, 255, 136, 0.1); border: 2px solid #00ff88; padding: 20px; border-radius: 10px; text-align: center;"><h3 style="color: #00ff88;">🔍 SEO PRO SUITE</h3><p>Price: £49.99</p><a href="https://buy.stripe.com/00w9AT03I3x7epJbh04F202" target="_blank"><button style="background: #00ff88; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">BUY SEO PRO KEY</button></a></div>', unsafe_allow_html=True)
         seo_key = st.text_input("Enter SEO Pro Key", type="password", key="seo_input")
         if seo_key == "SEO49":
             st.session_state.seo_pro_unlocked = True
