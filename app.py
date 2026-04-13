@@ -199,7 +199,11 @@ with t4:
                 st.error("Please generate a script in the Scriptwriter first!")
                 # --- THE SEO PRO TAB ---
 with t5:
-    if license_key == "SEO49" or st.session_state.get('seo_unlocked'):
+    # 1. We use 'key' because that's what line 28 in your sidebar says!
+    # 2. We also check if 'Agency' tier is active from your BOSS350 code.
+    is_agency = st.session_state.get('tier') == "Agency"
+    
+    if key == "SEO49" or is_agency or st.session_state.get('seo_unlocked'):
         st.session_state['seo_unlocked'] = True
         st.header("🔍 SEO Content Optimizer")
         
