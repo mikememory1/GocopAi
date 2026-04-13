@@ -162,7 +162,7 @@ with t2:
                 audio_data = io.BytesIO(audio_response.content)
                 st.audio(audio_data, format="audio/mp3")
                 st.success("Voiceover Ready!")
-             st.divider()
+                st.divider()
 
 # --- TAB 3: STRATEGIST ---
 
