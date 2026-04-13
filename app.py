@@ -78,12 +78,12 @@ if st.button("GENERATE FULL SCRIPT"):
                             {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style."}
                         ]
                     )
-# Save and show the script content
-        script_content = response.choices[0].message.content
-        st.session_state['generated_script'] = script_content
-        st.markdown(script_content)
+                    # 1. Save and show the script content
+                    script_content = response.choices[0].message.content
+                    st.session_state['generated_script'] = script_content
+                    st.markdown(script_content)    
 
-# --- TIKTOK POSTING GATE (Must touch left edge) ---
+# 2. The TikTok Gate (Must touch the far-left wall)
 if 'generated_script' in st.session_state:
     st.divider()
     st.subheader("🚀 Send to TikTok Drafts")
