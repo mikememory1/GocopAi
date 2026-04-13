@@ -299,7 +299,7 @@ with t5:
             with col2:
                 st.subheader("Meta Description")
                 st.code(f"Check out this viral video about {st.session_state['generated_script'][:20]}...")
-       st.divider()
+            st.divider()
             # Generate the PDF data using the function at the top of your script
             try:
                 report_pdf = create_pdf(
