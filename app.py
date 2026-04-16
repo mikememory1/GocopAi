@@ -88,23 +88,7 @@ with t1:
     st.subheader("🎯 PRO AD COPY GENERATOR")
     prod = st.text_input("Product/Service Name", placeholder="e.g. 1-on-1 Fitness Coaching")
     target = st.text_input("Target Audience", placeholder="e.g. Busy executives over 40")
-    
-    if st.button("GENERATE AI ADS"):
-        if prod and target:
-            with st.status("Analyzing Market Psychology..."):
-    
-                response = client.chat.completions.create(
-                    model="gemini-1.5-flash".
-                    messages=[
-                        {"role": "system", "content": "You are an expert direct-response copywriter like Gary Halbert. Write high-converting ad copy."},
-                        {"role": "user", "content": f"Write 3 different ad variations for {prod} targeting {target}. Include one 'Short & Punchy', one 'Story-based', and one 'List of Benefits'. Use emojis."}
-                    ]
-                )
-                ad_results = response.choices[0].message.content
-            st.success("Ads Ready!")
-            st.markdown(ad_results)
-        else:
-            st.warning("Please fill in both fields.")
+ 
 # Move these OUTSIDE and ABOVE the container logic
 st.subheader("🎬 VIRAL VIDEO SCRIPTWRITER")
 v_topic = st.text_input("What is the video about?", key="video_input_main")
@@ -114,14 +98,13 @@ v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Stor
 if st.button("GENERATE FULL SCRIPT"):
             if v_topic:
                 with st.status("Crafting Viral Narrative..."):
-                    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "system", "content": "You are a viral content specialist for TikTok and Reels."},
-                            {"role": "user", "content": f"Write a professional 60-second video script about {v_topic} in a {v_style} style."}
-                        ]
-                    )
+     response = client.chat.completions.create(
+                model="gemini-1.5-flash",
+                messages=[
+                    {"role": "system", "content": f"You are a viral content specialist for TikTok and Reels. Style: {v_style}"},
+                    {"role": "user", "content": f"Write a professional 60-second video script about {v_topic}"}
+                ]
+            ) 
                     # 1. Save and show the script content
                     script_content = response.choices[0].message.content
                     st.session_state['generated_script'] = script_content
