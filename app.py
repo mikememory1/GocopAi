@@ -98,17 +98,17 @@ v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Stor
 if st.button("GENERATE FULL SCRIPT"):
             if v_topic:
                 with st.status("Crafting Viral Narrative..."):
-     response = client.chat.completions.create(
+                response = client.chat.completions.create(
                 model="gemini-1.5-flash",
                 messages=[
-                    {"role": "system", "content": f"You are a viral content specialist for TikTok and Reels. Style: {v_style}"},
-                    {"role": "user", "content": f"Write a professional 60-second video script about {v_topic}"}
+                {"role": "system", "content": f"You are a viral content specialist for TikTok and Reels. Style: {v_style}"},
+                {"role": "user", "content": f"Write a professional 60-second video script about {v_topic}"}
                 ]
-            ) 
-                    # 1. Save and show the script content
-                    script_content = response.choices[0].message.content
-                    st.session_state['generated_script'] = script_content
-                    st.markdown(script_content)    
+                ) 
+                 # 1. Save and show the script content
+                script_content = response.choices[0].message.content
+                st.session_state['generated_script'] = script_content
+                st.markdown(script_content)    
 
 # 2. The TikTok Gate (Must touch the far-left wall)
 if 'generated_script' in st.session_state:
