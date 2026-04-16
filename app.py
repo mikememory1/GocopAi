@@ -96,34 +96,35 @@ v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Stor
 
 # Now the button sits below them, ready to work
 if st.button("GENERATE FULL SCRIPT"):
-            if v_topic:
-                with st.status("Crafting Viral Narrative..."):
-                response = client.chat.completions.create(
+    if v_topic:
+        with st.status("Crafting Viral Narrative..."):
+            response = client.chat.completions.create(
                 model="gemini-1.5-flash",
                 messages=[
-                {"role": "system", "content": f"You are a viral content specialist for TikTok and Reels. Style: {v_style}"},
-                {"role": "user", "content": f"Write a professional 60-second video script about {v_topic}"}
+                    {"role": "system", "content": f"You are a viral content specialist for TikTok and Reels. Style: {v_style}"},
+                    {"role": "user", "content": f"Write a professional 60-second video script about {v_topic}"}
                 ]
-                ) 
-                 # 1. Save and show the script content
-                script_content = response.choices[0].message.content
-                st.session_state['generated_script'] = script_content
-                st.markdown(script_content)    
+            )
+            # Save and show the script content
+            script_content = response.choices[0].message.content
+            st.session_state['generated_script'] = script_content
+            st.markdown(script_content)
+    else:
+            st.warning("Please enter a topic for the video first.")
 
 # 2. The TikTok Gate (Must touch the far-left wall)
 if 'generated_script' in st.session_state:
     st.divider()
     st.subheader("🚀 Send to TikTok Drafts")
-    
+
     final_script_text = st.text_area(
-        "Final Polish:", 
-        value=st.session_state['generated_script'], 
+        "Final Polish:",
+        value=st.session_state['generated_script'],
         height=250
     )
-    
+
     if st.button("SEND TO TIKTOK"):
         if "code" in st.query_params:
-            with st.status("Connecting to TikTok API..."):
                 st.balloons()
                 st.success("✅ Success! Check your TikTok drafts.")
         else:
