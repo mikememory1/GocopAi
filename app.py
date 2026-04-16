@@ -27,8 +27,9 @@ client = OpenAI(
     api_key=st.sidebar.text_input("Gemini Video Engine Key", type="password"),
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/" 
 )
-    h1, h2, h3 { color: #00f2ff !important; font-family: 'Inter', sans-serif; text-transform: uppercase; }
-    .stButton>button { 
+st.markdown("""
+h1, h2, h3 {
+.stButton>button { 
         background: linear-gradient(90deg, #00f2ff, #0072ff); 
         color: white; border-radius: 12px; font-weight: bold; border: none; height: 3.5rem;
     }
