@@ -28,7 +28,8 @@ client = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/" 
 )
 st.markdown("""
-h1, h2, h3 {
+<style>
+h1, h2, h3 { color: #00f2ff !important; font-family: 'Inter', sans-serif; text-transform: uppercase; }
 .stButton>button { 
         background: linear-gradient(90deg, #00f2ff, #0072ff); 
         color: white; border-radius: 12px; font-weight: bold; border: none; height: 3.5rem;
