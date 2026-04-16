@@ -25,7 +25,7 @@ st.set_page_config(page_title="GocopAi Agency Pro", layout="wide")
 
 client = OpenAI(
     api_key=st.sidebar.text_input("Gemini Video Engine Key", type="password"),
-   base_url="https://generativelanguage.googleapis.com/v1beta/openai/" 
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/" 
 )
     h1, h2, h3 { color: #00f2ff !important; font-family: 'Inter', sans-serif; text-transform: uppercase; }
     .stButton>button { 
