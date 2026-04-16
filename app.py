@@ -48,7 +48,7 @@ if "seo_pro_unlocked" not in st.session_state:
 with st.sidebar:
     st.title("⚡ MEMBER ACCESS")
     key = st.text_input("Enter License Key", type="password")
-     gemini_api_key = api_key
+    gemini_api_key = api_key
     if key == "BOSS350":
         st.session_state.tier = "Agency"
         st.success("👑 AGENCY MASTER ACCESS")
