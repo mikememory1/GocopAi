@@ -49,28 +49,28 @@ with st.sidebar:
     if key == "BOSS350":
         st.session_state.tier = "Agency"
         st.success("👑 AGENCY MASTER ACCESS")
-st.subheader("🧬 Brand DNA Specialist")
-brand_url = st.text_input("Enter Client Website URL", placeholder="https://example.com")
-
-if brand_url and st.button("Extract Brand DNA"):
- with st.spinner("Analyzing brand voice..."):
-    try:
-        import requests
-        from bs4 import BeautifulSoup
-        res = requests.get(brand_url, timeout=10)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        for s in soup(["script", "style"]):
-            s.decompose()
-        st.session_state['brand_context'] = soup.get_text(separator=' ', strip=True)[:3000]
-        st.success("DNA Extracted!")
-    except Exception as e:
-        st.error(f"Error: {e}")
-    st.divider()
-if st.session_state.tier != "Agency":
-    st.error("🔥 40% OFF CODE: LAUNCH40")
-    st.markdown("[🚀 UPGRADE TO AGENCY (£300)](https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200)")
-    st.markdown("[🔓 UNLOCK AUTO-PILOT (£69.99)](https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201)")
-    st.markdown("[🔓 UNLOCK SEO PRO (£49.99)](https://buy.stripe.com/00w9AT03I3x7epJbh04F202)")
+    st.subheader("🧬 Brand DNA Specialist")
+    brand_url = st.text_input("Enter Client Website URL", placeholder="https://example.com")
+    
+    if brand_url and st.button("Extract Brand DNA"):
+     with st.spinner("Analyzing brand voice..."):
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            res = requests.get(brand_url, timeout=10)
+            soup = BeautifulSoup(res.text, 'html.parser')
+            for s in soup(["script", "style"]):
+                s.decompose()
+            st.session_state['brand_context'] = soup.get_text(separator=' ', strip=True)[:3000]
+            st.success("DNA Extracted!")
+        except Exception as e:
+            st.error(f"Error: {e}")
+        st.divider()
+    if st.session_state.tier != "Agency":
+        st.error("🔥 40% OFF CODE: LAUNCH40")
+        st.markdown("[🚀 UPGRADE TO AGENCY (£300)](https://buy.stripe.com/28E3cv2bQ0kV95p98S4F200)")
+        st.markdown("[🔓 UNLOCK AUTO-PILOT (£69.99)](https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201)")
+        st.markdown("[🔓 UNLOCK SEO PRO (£49.99)](https://buy.stripe.com/00w9AT03I3x7epJbh04F202)")
 
 # --- THE APP TABS ---
 t1, t2, t3, t4, t5, t6 = st.tabs(["🎯 AD GENERATOR", "🎬 VIDEO SCRIPTS", "🤖 AGENCY AGENT", "📲 AUTO-PILOT", "🔎 SEO PRO", "🎥 VIDEO STUDIO"])
