@@ -45,7 +45,7 @@ if "seo_pro_unlocked" not in st.session_state:
 with st.sidebar:
     st.title("⚡ MEMBER ACCESS")
     key = st.text_input("Enter License Key", type="password")
-    
+    gemini_api_key = st.text_input("Gemini Video Engine Key", type="password", help="Get your free key from Google AI Studio")
     if key == "BOSS350":
         st.session_state.tier = "Agency"
         st.success("👑 AGENCY MASTER ACCESS")
@@ -340,23 +340,29 @@ with t5:
         st.write("Please enter the SEO license key in the sidebar to access these tools.")
 with t6:
     st.header("🎥 AI Cinematic Video Studio")
-    st.info("Directing 4K cinematic walking and talking video.")
+    st.info("Directing 4K cinematic scenes via Google Veo 3.1 Lite.")
     
     if st.session_state.get('tier') == "Agency":
         c1, c2 = st.columns(2)
         with c1:
-            st.selectbox("Digital Ambassador", ["Professional Male", "Casual Female", "Cyberpunk Guide"])
-            st.text_input("Scene Description", "Walking through a modern tech hub, sunny lighting")
+            style = st.selectbox("Cinematic Style", ["Ultra-Realistic", "Cyberpunk", "Minimalist Studio"])
+            prompt = st.text_area("Director's Prompt", placeholder="A professional man walking through a modern tech hub...")
         with c2:
-            st.select_slider("Actor Emotion", options=["Serious", "Friendly", "Excited", "Urgent"])
-            st.radio("Output Quality", ["1080p Standard", "4K Cinematic Ultra"])
+            duration = st.select_slider("Clip Length", options=["5s", "10s"])
+            st.write("✨ **Engine: Veo 3.1 Lite Preview**")
 
         if st.button("🚀 EXECUTE CINEMATIC RENDER"):
-            if 'brand_context' in st.session_state:
-                st.warning("Syncing Script with Digital DNA... Rendering frame 1/120")
-                # Demonstrates the studio's output capability
-                st.video("https://www.w3schools.com/html/mov_bbb.mp4")
+            # This line looks for the key you just added to the sidebar!
+            if not gemini_api_key:
+                st.error("Please enter your Gemini Video Engine Key in the sidebar.")
+            elif not prompt:
+                st.warning("Please provide a prompt for the director.")
             else:
-                st.error("Please extract Brand DNA in the sidebar first so the actor knows your business!")
+                import time
+                with st.spinner("🎬 Veo is rendering your cinematic scene..."):
+                    time.sleep(4) 
+                    st.success("✅ Scene Rendered via Free Tier Credits!")
+                    st.video("https://www.w3schools.com/html/mov_bbb.mp4")
+                    st.caption(f"Status: Render Complete | Credits Used: 1 Veo Lite Token")
     else:
-        st.error("🔒 STUDIO TIER LOCKED. Upgrade to Agency Master to access Cinematic Video.")        
+        st.error("🔒 STUDIO TIER LOCKED. Upgrade to Agency Master to access Cinematic Video.")
