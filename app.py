@@ -8,7 +8,7 @@ def create_pdf(script, score, keywords):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="GoCopyAI Agency Pro Report", ln=True, align='C')
+    pdf.cell(200, 10, txt="GoCopyAI Agency Pro Report", ln=True, align='C') 
     pdf.set_font("Arial", size=12)
     pdf.ln(10)
     pdf.cell(200, 10, txt=f"SEO Performance Score: {score}", ln=True)
