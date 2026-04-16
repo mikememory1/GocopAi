@@ -23,9 +23,13 @@ def create_pdf(script, score, keywords):
 # --- PREMIUM BRANDING ---
 st.set_page_config(page_title="GocopAi Agency Pro", layout="wide")
 
+# Create the input first
+api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password", key="master_key")
+
+# Then use it in the client
 client = OpenAI(
-   api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password"),
-   base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    api_key=api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
 st.markdown("""
 <style>
