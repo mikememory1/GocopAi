@@ -72,6 +72,16 @@ with st.sidebar:
         st.markdown("[🔓 UNLOCK AUTO-PILOT (£69.99)](https://buy.stripe.com/cNibJ103I5Ff1CXbh04F201)")
         st.markdown("[🔓 UNLOCK SEO PRO (£49.99)](https://buy.stripe.com/00w9AT03I3x7epJbh04F202)")
 
+# --- INITIALIZE THE AI CLIENT ---
+import openai
+
+if gemini_api_key:
+    client = openai.OpenAI(
+        api_key=gemini_api_key,
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+    )
+else:
+    client = None
 # --- THE APP TABS ---
 t1, t2, t3, t4, t5, t6 = st.tabs(["🎯 AD GENERATOR", "🎬 VIDEO SCRIPTS", "🤖 AGENCY AGENT", "📲 AUTO-PILOT", "🔎 SEO PRO", "🎥 VIDEO STUDIO"])
 with t1:
@@ -82,9 +92,9 @@ with t1:
     if st.button("GENERATE AI ADS"):
         if prod and target:
             with st.status("Analyzing Market Psychology..."):
-                client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    
                 response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model="gemini-1.5-flash".
                     messages=[
                         {"role": "system", "content": "You are an expert direct-response copywriter like Gary Halbert. Write high-converting ad copy."},
                         {"role": "user", "content": f"Write 3 different ad variations for {prod} targeting {target}. Include one 'Short & Punchy', one 'Story-based', and one 'List of Benefits'. Use emojis."}
