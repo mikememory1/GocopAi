@@ -106,13 +106,14 @@ if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
         with st.status("Crafting Viral Narrative...", expanded=True):
             try:
-                # 1. FORCE STABLE VERSION 'v1'
+                # 1. Setup the API to strictly use the REST transport
+                # This bypasses the beta streaming issues in the UK
                 genai.configure(api_key=api_key, transport='rest')
                 
-                # 2. Use the most basic stable model ID
+                # 2. Use the most basic model ID without any prefixes
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 
-                # 3. Generate content with the stable path
+                # 3. Generate content
                 prompt = f"Write a viral {v_style} video script about {v_topic}."
                 response = model.generate_content(prompt)
                 
@@ -121,7 +122,8 @@ if st.button("GENERATE FULL SCRIPT"):
                 st.markdown(response.text)
                 
             except Exception as e:
-                st.error(f"Regional Block Error: {e}")
+                # This will now show the direct stable connection error if it fails
+                st.error(f"Stable Connection Error: {e}")
     else:
         if not v_topic:
             st.warning("Please enter a video topic!")
