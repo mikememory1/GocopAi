@@ -120,18 +120,17 @@ if st.button("GENERATE FULL SCRIPT"):
                 
                 st.success("Script Ready!")
                 st.markdown(response.text)
+                # Save to session state for the TikTok gate below
+                st.session_state['generated_script'] = response.text
                 
             except Exception as e:
                 st.error(f"Stability Error: {e}")
     else:
-        # These are now perfectly aligned with the 'if' on line 106
+        # Perfectly aligned error messages
         if not v_topic:
             st.warning("Please enter a video topic!")
         if not api_key:
             st.warning("Please enter your API Key in the sidebar!")
-    else:
-        if not v_topic:
-            st.warning("Please enter a video topic!")
        
 # 2. The TikTok Gate (Must touch the far-left wall)
 if 'generated_script' in st.session_state:
