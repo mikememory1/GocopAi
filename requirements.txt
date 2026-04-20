@@ -3,4 +3,4 @@ openai
 fpdf
 requests
 beautifulsoup4
-google-generativeai
+google-genai
