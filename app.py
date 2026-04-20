@@ -106,11 +106,13 @@ if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
         with st.status("Crafting Viral Narrative...", expanded=True):
             try:
+                # Use the key from Line 27
                 genai.configure(api_key=api_key)
                 
-                # THIS LINE ENSURES WE USE THE STABLE VERSION
-                model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                # Use the stable model path
+                model = genai.GenerativeModel('models/gemini-1.5-flash')
                 
+                # Generate
                 prompt = f"Write a viral {v_style} video script about {v_topic}."
                 response = model.generate_content(prompt)
                 
