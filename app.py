@@ -108,7 +108,7 @@ if st.button("GENERATE FULL SCRIPT"):
             try:
                 # Setup Gemini
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash-latest')
+               model = genai.GenerativeModel('gemini-1.5-flash') 
                 
                 # Generate Script
                 prompt = f"Write a viral {v_style} video script about {v_topic}."
