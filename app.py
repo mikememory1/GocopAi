@@ -106,21 +106,26 @@ if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
         with st.status("Crafting Viral Narrative...", expanded=True):
             try:
-                # Use the key from Line 27
+                # 1. Setup the Brain
                 genai.configure(api_key=api_key)
                 
-                # Use the stable model path
-                model = genai.GenerativeModel('models/gemini-1.5-flash')
+                # 2. Force the STABLE model (This avoids the v1beta error)
+                model = genai.GenerativeModel(
+                    model_name='gemini-1.5-flash',
+                    generation_config={"top_p": 0.95, "top_k": 64, "temperature": 1.0}
+                )
                 
-                # Generate
+                # 3. Use the correct generation method
                 prompt = f"Write a viral {v_style} video script about {v_topic}."
                 response = model.generate_content(prompt)
                 
+                # 4. Save and show
                 st.success("Script Ready!")
                 st.markdown(response.text)
                 
             except Exception as e:
-                st.error(f"App Error: {e}")
+                # If it still fails, we'll see exactly why
+                st.error(f"Regional Connection Error: {e}")
     else:
         if not v_topic:
             st.warning("Please enter a video topic!")
