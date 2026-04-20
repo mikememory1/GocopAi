@@ -109,7 +109,7 @@ if st.button("GENERATE FULL SCRIPT"):
                 genai.configure(api_key=api_key)
                 
                 # THIS LINE ENSURES WE USE THE STABLE VERSION
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash-latest')
                 
                 prompt = f"Write a viral {v_style} video script about {v_topic}."
                 response = model.generate_content(prompt)
