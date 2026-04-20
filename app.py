@@ -101,27 +101,32 @@ st.subheader("🎬 VIRAL VIDEO SCRIPTWRITER")
 v_topic = st.text_input("What is the video about?", key="video_input_main")
 v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Storytelling"], key="style_input_main")
 
-# Now the button sits below them, ready to work
 if st.button("GENERATE FULL SCRIPT"):
     if v_topic:
-        with st.status("Crafting Viral Narrative..."):
-            response = client.chat.completions.create(
-                api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password").strip()
-
-if api_key:
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    except Exception as e:
-        st.error(f"Initialization Error: {e}")
-                ]
-            )
-            # Save and show the script content
-            script_content = response.choices[0].message.content
-            st.session_state['generated_script'] = script_content
-            st.markdown(script_content)
-    else:
-            st.warning("Please enter a topic for the video first.")
+        # 1. Clean the key input
+        api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password").strip()
+        
+        if api_key:
+            with st.status("Generating Script...", expanded=True):
+                try:
+                    # 2. Configure Gemini for 2026 UK Models
+                    genai.configure(api_key=api_key)
+                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                    
+                    # 3. Create the prompt
+                    prompt = f"Write a viral {v_style} video script about {v_topic}."
+                    
+                    # 4. Get the response
+                    response = model.generate_content(prompt)
+                    
+                    # 5. Display the result
+                    st.success("Script Ready!")
+                    st.markdown(response.text)
+                    
+                except Exception as e:
+                    st.error(f"App Error: {e}")
+        else:
+            st.warning("Please enter your API Key in the sidebar.")
 
 # 2. The TikTok Gate (Must touch the far-left wall)
 if 'generated_script' in st.session_state:
