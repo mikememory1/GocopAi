@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 import time
 from openai import OpenAI
 from fpdf import FPDF
@@ -104,26 +104,22 @@ v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Stor
 
 if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
-        with st.status("Crafting Viral Narrative...", expanded=True):
+        with st.status("Connecting to Google Stable V1...", expanded=True):
             try:
-                # 1. Setup the API to strictly use the REST transport
-                # This bypasses the beta streaming issues in the UK
-                genai.configure(api_key=api_key, transport='rest')
+                # This uses the brand new 2026 'google-genai' client
+                client = genai.Client(api_key=api_key)
                 
-                # 2. Use the most basic model ID without any prefixes
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Generate content using the new GA (General Availability) method
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash', 
+                    contents=f"Write a viral {v_style} video script about {v_topic}."
+                )
                 
-                # 3. Generate content
-                prompt = f"Write a viral {v_style} video script about {v_topic}."
-                response = model.generate_content(prompt)
-                
-                # 4. Display result
                 st.success("Script Ready!")
                 st.markdown(response.text)
                 
             except Exception as e:
-                # This will now show the direct stable connection error if it fails
-                st.error(f"Stable Connection Error: {e}")
+                st.error(f"Stability Error: {e}")
     else:
         if not v_topic:
             st.warning("Please enter a video topic!")
