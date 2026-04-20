@@ -246,8 +246,8 @@ with t3:
                 st.error(f"Agent connection lost: {e}")      
 # --- TAB 4: AUTO-PILOT ---
 import urllib.parse
-client_key = st.secrets["TIKTOK_CLIENT_KEY"]
-redirect_uri = st.secrets["TIKTOK_REDIRECT_URI"]
+# client_key = st.secrets["TIKTOK_CLIENT_KEY"]
+# redirect_uri = st.secrets["TIKTOK_REDIRECT_URI"]
 scope = "user.info.basic,video.upload,video.publish"
 auth_url = (f"https://www.tiktok.com/v2/auth/authorize/?client_key={client_key}&scope={scope}&response_type=code&redirect_uri={urllib.parse.quote(redirect_uri)}")
 
