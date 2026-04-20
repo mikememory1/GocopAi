@@ -106,10 +106,14 @@ if st.button("GENERATE FULL SCRIPT"):
     if v_topic:
         with st.status("Crafting Viral Narrative..."):
             response = client.chat.completions.create(
-                model="gemini-1.5-flash",
-                messages=[
-                    {"role": "system", "content": f"You are a viral content specialist for TikTok and Reels. Style: {v_style}"},
-                    {"role": "user", "content": f"Write a professional 60-second video script about {v_topic}"}
+                api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password").strip()
+
+if api_key:
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    except Exception as e:
+        st.error(f"Initialization Error: {e}")
                 ]
             )
             # Save and show the script content
