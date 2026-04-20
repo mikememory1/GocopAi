@@ -106,10 +106,13 @@ if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
         with st.status("Connecting to Google Stable V1...", expanded=True):
             try:
-                # This uses the brand new 2026 'google-genai' client
-                client = genai.Client(api_key=api_key)
+                # FORCE the stable v1 version to stop the 404/v1beta errors
+                client = genai.Client(
+                    api_key=api_key,
+                    http_options={'api_version': 'v1'}
+                )
                 
-                # Generate content using the new GA (General Availability) method
+                # Use the universal model name
                 response = client.models.generate_content(
                     model='gemini-1.5-flash', 
                     contents=f"Write a viral {v_style} video script about {v_topic}."
@@ -120,6 +123,11 @@ if st.button("GENERATE FULL SCRIPT"):
                 
             except Exception as e:
                 st.error(f"Stability Error: {e}")
+    else:
+        if not v_topic:
+            st.warning("Please enter a video topic!")
+        if not api_key:
+            st.warning("Please enter your API Key in the sidebar!")
     else:
         if not v_topic:
             st.warning("Please enter a video topic!")
