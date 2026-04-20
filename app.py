@@ -103,18 +103,17 @@ v_topic = st.text_input("What is the video about?", key="video_input_main")
 v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Storytelling"], key="style_input_main")
 
 if st.button("GENERATE FULL SCRIPT"):
-    if v_topic and api_key: # This uses the key from Line 27
+    if api_key and v_topic:
         with st.status("Crafting Viral Narrative...", expanded=True):
             try:
-                # Setup Gemini
                 genai.configure(api_key=api_key)
-               model = genai.GenerativeModel('gemini-1.5-flash') 
                 
-                # Generate Script
+                # THIS LINE ENSURES WE USE THE STABLE VERSION
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                
                 prompt = f"Write a viral {v_style} video script about {v_topic}."
                 response = model.generate_content(prompt)
                 
-                # Show Result
                 st.success("Script Ready!")
                 st.markdown(response.text)
                 
