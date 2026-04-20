@@ -24,7 +24,7 @@ def create_pdf(script, score, keywords):
 st.set_page_config(page_title="GocopAi Agency Pro", layout="wide")
 
 # Create the input first
-api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password", key="master_key")
+api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password", key="master_key").strip()
 
 # Then use it in the client
 client = OpenAI(
@@ -102,31 +102,28 @@ v_topic = st.text_input("What is the video about?", key="video_input_main")
 v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Storytelling"], key="style_input_main")
 
 if st.button("GENERATE FULL SCRIPT"):
-    if v_topic:
-        # 1. Clean the key input
-        api_key = st.sidebar.text_input("Gemini Video Engine Key", type="password").strip()
-        
-        if api_key:
-            with st.status("Generating Script...", expanded=True):
-                try:
-                    # 2. Configure Gemini for 2026 UK Models
-                    genai.configure(api_key=api_key)
-                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                    
-                    # 3. Create the prompt
-                    prompt = f"Write a viral {v_style} video script about {v_topic}."
-                    
-                    # 4. Get the response
-                    response = model.generate_content(prompt)
-                    
-                    # 5. Display the result
-                    st.success("Script Ready!")
-                    st.markdown(response.text)
-                    
-                except Exception as e:
-                    st.error(f"App Error: {e}")
-        else:
-            st.warning("Please enter your API Key in the sidebar.")
+    if v_topic and api_key: # This uses the key from Line 27
+        with st.status("Crafting Viral Narrative...", expanded=True):
+            try:
+                # Setup Gemini
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                
+                # Generate Script
+                prompt = f"Write a viral {v_style} video script about {v_topic}."
+                response = model.generate_content(prompt)
+                
+                # Show Result
+                st.success("Script Ready!")
+                st.markdown(response.text)
+                
+            except Exception as e:
+                st.error(f"App Error: {e}")
+    else:
+        if not v_topic:
+            st.warning("Please enter a video topic!")
+        if not api_key:
+            st.warning("Please enter your API Key in the sidebar!")
 
 # 2. The TikTok Gate (Must touch the far-left wall)
 if 'generated_script' in st.session_state:
