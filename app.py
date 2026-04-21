@@ -106,17 +106,14 @@ if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
         with st.status("Connecting to Google Stable V1...", expanded=True):
             try:
-                # 1. Setup the client with forced stable version
-                client = genai.Client(
-                    api_key=api_key,
-                    http_options={'api_version': 'v1'}
-                )
+            # 1. Setup the client (Letting the library handle the version automatically)
+        client = genai.Client(api_key=api_key)  
                 
-                # 2. Use the stable model name
+              # NEW 2026 SYNTAX: Use 'gemini-1.5-flash' without extra suffixes
                 response = client.models.generate_content(
-                    model="gemini-1.5-flash", 
+                    model="gemini-1.5-flash",
                     contents=f"Write a viral {v_style} video script about {v_topic}."
-                )
+                )  
                 
                 st.success("Script Ready!")
                 st.markdown(response.text)
