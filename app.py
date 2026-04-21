@@ -83,10 +83,33 @@ t1, t2, t3, t4, t5, t6 = st.tabs(["🎯 AD GENERATOR", "🎬 VIDEO SCRIPTS", "�
 
 with t1:
     st.subheader("🎯 PRO AD COPY GENERATOR")
-    prod = st.text_input("Product/Service Name")
-    target = st.text_input("Target Audience")
+    prod = st.text_input("Product/Service Name", placeholder="e.g. 1-on-1 Fitness Coaching")
+    target = st.text_input("Target Audience", placeholder="e.g. Busy executives over 40")
+    
     if st.button("Generate Ad"):
-        st.info("Ad Generator logic goes here.")
+        if api_key and prod and target:
+            with st.spinner("Writing high-converting ad copy..."):
+                try:
+                    # Uses the client you defined at the top of the script
+                    response = client.chat.completions.create(
+                        model="gemini-1.5-flash",
+                        messages=[
+                            {"role": "system", "content": "You are an expert direct-response copywriter."},
+                            {"role": "user", "content": f"Write a high-converting Facebook ad for {prod} targeting {target}."}
+                        ]
+                    )
+                    
+                    ad_text = response.choices[0].message.content
+                    st.success("Ad Copy Generated!")
+                    st.write(ad_text)
+                    
+                    # Optional: Add a copy button
+                    st.button("Copy to Clipboard", on_click=lambda: st.write("Copied! (This is a placeholder for actual copy logic)"))
+                    
+                except Exception as e:
+                    st.error(f"Ad Generation Error: {e}")
+        else:
+            st.warning("Please enter your API Key, Product Name, and Target Audience.")
 
 with t2:
     st.subheader("🎬 VIRAL VIDEO SCRIPTWRITER")
