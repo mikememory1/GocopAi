@@ -101,31 +101,33 @@ with t1:
 st.subheader("🎬 VIRAL VIDEO SCRIPTWRITER")
 v_topic = st.text_input("What is the video about?", key="video_input_main")
 v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Storytelling"], key="style_input_main")
-
 if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
         with st.status("Connecting to Google Stable V1...", expanded=True):
             try:
-            # 1. Setup the client (Letting the library handle the version automatically)
-        client = genai.Client(api_key=api_key)  
+                # 1. Setup the client
+                client = genai.Client(api_key=api_key)  
                 
-              # NEW 2026 SYNTAX: Use 'gemini-1.5-flash' without extra suffixes
+                # 2. Generate Content
                 response = client.models.generate_content(
                     model="gemini-1.5-flash",
                     contents=f"Write a viral {v_style} video script about {v_topic}."
-                )  
-                
+                )
+
                 st.success("Script Ready!")
                 st.markdown(response.text)
-                # Save to session state for the TikTok gate below
-                st.session_state['generated_script'] = response.text
                 
+                # 3. Save for other tabs (like Auto-Pilot or PDF)
+                st.session_state['generated_script'] = response.text  
+
             except Exception as e:
                 st.error(f"Stability Error: {e}")
     else:
-        # Perfectly aligned error messages
+        # Warnings for the user if they miss a field
+        if not api_key:
+            st.warning("Please enter your Gemini Video Engine Key in the sidebar.")
         if not v_topic:
-            st.warning("Please enter a video topic!")
+            st.warning("Please enter what the video is about!")
         if not api_key:
             st.warning("Please enter your API Key in the sidebar!")
        
