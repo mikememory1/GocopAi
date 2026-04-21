@@ -114,7 +114,7 @@ if st.button("GENERATE FULL SCRIPT"):
                 
                 # 2. Use the stable model name
                 response = client.models.generate_content(
-                    model='gemini-1.5-flash', 
+                    model="gemini-1.5-flash-latest" 
                     contents=f"Write a viral {v_style} video script about {v_topic}."
                 )
                 
