@@ -252,82 +252,44 @@ st.subheader("🚀 Social Media Auto-Pilot")
 # Later, we will move these to your Streamlit Secrets vault for real connections
 client_key = "STABLE_V1_ACTIVE"
 redirect_uri = "https://gocopai.streamlit.app" 
+# --- TAB 4: AUTO-PILOT LOGIC ---
+with t4:
+    if 'auto_pilot_unlocked' not in st.session_state:
+        st.session_state.auto_pilot_unlocked = False
 
-# 1. Check if the user has unlocked the pro features
-if 'auto_pilot_unlocked' not in st.session_state:
-    st.session_state.auto_pilot_unlocked = False
-
-if not st.session_state.auto_pilot_unlocked:
-    st.markdown("### 🔒 Premium Feature: Auto-Posting")
-    st.info("Directly send your generated scripts to TikTok, Instagram, and YouTube drafts.")
-    
-    # This is the paywall logic for your customers
-  ap_key = st.text_input("Enter License Key to Unlock Auto-Pilot", type="password", key="ap_unlock_input")
-    if ap_key == "POST69":
-        st.session_state.auto_pilot_unlocked = True
-        st.success("Auto-Pilot Unlocked!")
-        st.balloons()
-        st.rerun()
-else:
-    # This is the "Connected" screen customers see after they buy
-    st.success("✅ Auto-Pilot Mode Active")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write("📸 **Instagram Status**")
-        st.button("Connect Meta", use_container_width=True, key="meta_conn")
-    with col2:
-        st.write("🎵 **TikTok Status**")
-        st.button("Connect TikTok", use_container_width=True, key="tt_conn")
-
-    st.divider()
-    if st.button("BLAST TO ALL CONNECTED PLATFORMS", use_container_width=True, type="primary"):
-        if 'generated_script' in st.session_state:
-            with st.status("Syncing Content..."):
-                st.write("Checking Connections... ✅")
-                st.balloons()
-            st.success("Drafts sent successfully!")
-        else:
-            st.error("Please generate a script in the Scriptwriter first!")
-
-# --- TAB 5: SEO PRO SPECIALIST ---
-with t5:
-    is_agency = st.session_state.get('tier') == "Agency"
-    # Logic to check the key from your sidebar
-    if st.session_state.get('key') == "SEO49" or is_agency or st.session_state.get('seo_unlocked'):
-        st.session_state['seo_unlocked'] = True
-        st.header("🔍 SEO Content Optimizer")
+    if not st.session_state.auto_pilot_unlocked:
+        st.markdown("### 🔒 Premium Feature: Auto-Posting")
+        st.info("Directly send your generated scripts to TikTok, Instagram, and YouTube drafts.")
         
-        if 'generated_script' in st.session_state:
-            st.metric("SEO Score", "85/100", "+5%")
-            st.write("**Keywords:** Viral AI, Content Hacks, Marketing 2026")
-            st.code(f"Meta: Check out this viral video script...")
-            st.divider()
-            st.info("📥 PDF Report Generator Ready (Ensure 'fpdf2' is in requirements.txt)")
-        else:
-            st.warning("⚠️ No script found. Generate one in the Video Scripts tab!")
+        ap_key = st.text_input("Enter License Key to Unlock Auto-Pilot", type="password", key="ap_unlock_v4")
+        if ap_key == "POST69":
+            st.session_state.auto_pilot_unlocked = True
+            st.success("Auto-Pilot Unlocked!")
+            st.balloons()
+            st.rerun()
     else:
-        st.header("🔒 SEO Pro Locked")
-        st.write("Enter the SEO license key in the sidebar to access.")
+        st.success("✅ Auto-Pilot Mode Active")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.button("Connect Meta", use_container_width=True, key="meta_btn_final")
+        with c2:
+            st.button("Connect TikTok", use_container_width=True, key="tt_btn_final")
 
-# --- TAB 6: AI CINEMATIC STUDIO ---
+# --- TAB 5: SEO PRO ---
+with t5:
+    st.header("🔍 SEO Content Optimizer")
+    is_agency = st.session_state.get('tier') == "Agency"
+    # We use .get('key') to match the sidebar input from your earlier code
+    if st.session_state.get('key') == "SEO49" or is_agency:
+        st.success("SEO Tools Unlocked")
+    else:
+        st.info("🔒 SEO Pro Locked. Enter key in sidebar.")
+
+# --- TAB 6: AI STUDIO ---
 with t6:
     st.header("🎥 AI Cinematic Video Studio")
     if st.session_state.get('tier') == "Agency":
-        c1, c2 = st.columns(2)
-        with c1:
-            style = st.selectbox("Cinematic Style", ["Ultra-Realistic", "Cyberpunk", "Minimalist"], key="studio_style")
-            v_prompt = st.text_area("Director's Prompt", placeholder="Describe the scene...", key="studio_prompt")
-        with c2:
-            st.write("✨ **Engine: Veo 3.1 Lite**")
-            if st.button("🚀 EXECUTE RENDER", use_container_width=True):
-                if v_prompt:
-                    with st.spinner("🎬 Rendering..."):
-                        import time
-                        time.sleep(3)
-                        st.video("https://www.w3schools.com/html/mov_bbb.mp4")
-                else:
-                    st.warning("Please provide a prompt.")
+        st.write("Ready to render cinematic scenes via Veo 3.1.")
     else:
         st.error("🔒 STUDIO TIER LOCKED. Upgrade to Agency Master.")
 
