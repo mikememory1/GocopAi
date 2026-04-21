@@ -103,10 +103,11 @@ v_topic = st.text_input("What is the video about?", key="video_input_main")
 v_style = st.selectbox("Video Style", ["Educational", "Hype/Motivational", "Storytelling"], key="style_input_main")
 if st.button("GENERATE FULL SCRIPT"):
     if api_key and v_topic:
-        with st.status("Connecting to Google Stable V1...", expanded=True):
+       
+         with st.status("Connecting to Google Stable V1...", expanded=True):
             try:
-                # 1. Setup the client
-                client = genai.Client(api_key=api_key)  
+                # 1. Setup the client (FORCING STABLE v1)
+                client = genai.Client(api_key=api_key, http_options={'api_version': 'v1'})
                 
                 # 2. Generate Content
                 response = client.models.generate_content(
@@ -117,11 +118,11 @@ if st.button("GENERATE FULL SCRIPT"):
                 st.success("Script Ready!")
                 st.markdown(response.text)
                 
-                # 3. Save for other tabs (like Auto-Pilot or PDF)
+                # 3. Save to session state
                 st.session_state['generated_script'] = response.text  
 
             except Exception as e:
-                st.error(f"Stability Error: {e}")
+                st.error(f"Stability Error: {e}")   
     else:
         # Warnings for the user if they miss a field
         if not api_key:
