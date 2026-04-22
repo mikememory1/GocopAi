@@ -14,7 +14,8 @@ from google.genai import types as gtypes
 # =========================
 
 APP_NAME = "GocopAi Agency Pro"
-PRIMARY_MODEL = "models/gemini-1.5-flash-001"
+PRIMARY_MODEL = "models/gemini-2.5-flash"
+
 
 # License tiers
 TIER_FREE = "Free"
