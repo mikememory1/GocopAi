@@ -441,26 +441,155 @@ def render_clients_tab():
 def render_video_studio_tab(client):
     require_tier(TIER_AGENCY, "Video Studio")
     st.header("Video Studio")
-    idea = st.text_input("Video Idea", "Why your ads aren't converting")
-    format_ = st.selectbox("Format", ["Short-form", "Long-form", "Webinar", "VSL"])
 
-    if st.button("Generate Video Outline"):
-        prompt = f"""
-        You are a video content strategist.
+    st.markdown("### Advanced Video Ad Generator")
 
-        Idea: {idea}
-        Format: {format_}
+    col1, col2 = st.columns(2)
 
-        Deliver:
-        - Hook ideas
-        - Segment breakdown
-        - CTA suggestions
-        - Visual / B-roll suggestions
-        """
-        with st.spinner("Building video outline..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### Video Outline")
-        st.write(text)
+    with col1:
+        product_name = st.text_input("Product Name", "Example Product")
+        product_benefits = st.text_area("Top Benefits (3–5)", "Benefit 1\nBenefit 2\nBenefit 3")
+        target_audience = st.text_input("Target Audience", "Busy professionals, parents, creators")
+        price_point = st.text_input("Price Point (optional)", "")
+        offer = st.text_input("Offer (optional)", "20% off today only")
+
+    with col2:
+        brand_tone = st.selectbox(
+            "Brand Tone",
+            ["UGC Casual", "Professional", "Aesthetic Minimal", "Hype/Energetic", "Luxury", "Playful"]
+        )
+        primary_platform = st.selectbox(
+            "Primary Platform",
+            ["TikTok", "Instagram Reels", "YouTube Shorts", "Facebook/IG Feed"]
+        )
+        st.info("Upload product images in CapCut when using your template.")
+
+    if st.button("Generate Full Video Package"):
+        with st.spinner("Generating hooks, scripts, captions, hashtags, and more..."):
+
+            # HOOKS
+            hook_prompt = f"""
+            Generate 3 short, punchy hooks for a video ad about {product_name}.
+            Audience: {target_audience}
+            Tone: {brand_tone}
+            Platform: {primary_platform}
+            Each hook under 8 words.
+            """
+            hooks = gemini_generate_text(client, hook_prompt)
+
+            # MAIN SCRIPT
+            script_prompt = f"""
+            Write a high-converting short-form video ad script for {product_name}.
+            Benefits: {product_benefits}
+            Audience: {target_audience}
+            Tone: {brand_tone}
+            Platform: {primary_platform}
+            Offer: {offer}
+            Price: {price_point}
+
+            Structure:
+            - Hook
+            - Problem
+            - Product as solution
+            - Benefits
+            - Social proof vibe
+            - CTA
+
+            Keep under 14 seconds.
+            """
+            main_script = gemini_generate_text(client, script_prompt)
+
+            # A/B SCRIPT
+            ab_prompt = f"""
+            Create an alternative A/B test script for {product_name}.
+            Use a different hook angle.
+            Keep under 14 seconds.
+            Audience: {target_audience}
+            Tone: {brand_tone}
+            """
+            alt_script = gemini_generate_text(client, ab_prompt)
+
+            # VOICEOVER
+            vo_prompt = f"""
+            Convert this script into a natural, human-sounding voiceover.
+            Keep pacing tight.
+            Script:
+            {main_script}
+            """
+            voiceover = gemini_generate_text(client, vo_prompt)
+
+            # CAPTIONS
+            captions_prompt = f"""
+            Convert this script into TikTok-style captions.
+            Add emojis where natural.
+            Break lines for rhythm.
+            Script:
+            {main_script}
+            """
+            captions = gemini_generate_text(client, captions_prompt)
+
+            # HASHTAGS
+            hashtags_prompt = f"""
+            Generate 12–18 hashtags for {product_name}.
+            Platform: {primary_platform}
+            Audience: {target_audience}
+            Mix broad + niche + intent-based.
+            """
+            hashtags = gemini_generate_text(client, hashtags_prompt)
+
+            # THUMBNAIL TEXT
+            thumb_prompt = f"""
+            Generate 5 bold, 2–5 word thumbnail text ideas for {product_name}.
+            Tone: {brand_tone}
+            """
+            thumbnail_text = gemini_generate_text(client, thumb_prompt)
+
+            # PRODUCT DESCRIPTION
+            desc_prompt = f"""
+            Write an SEO-friendly Shopify product description for {product_name}.
+            Benefits: {product_benefits}
+            Audience: {target_audience}
+            """
+            product_description = gemini_generate_text(client, desc_prompt)
+
+            # CTA PACK
+            cta_prompt = f"""
+            Generate a CTA pack for {product_name}:
+            - 5 ultra-short CTAs (2–4 words)
+            - 5 medium CTAs (1 sentence)
+            - 3 long CTAs (2–3 sentences)
+            Tone: {brand_tone}
+            """
+            cta_pack = gemini_generate_text(client, cta_prompt)
+
+        # OUTPUT
+        st.subheader("Hooks")
+        st.write(hooks)
+
+        st.subheader("Main Script")
+        st.write(main_script)
+
+        st.subheader("A/B Script Variant")
+        st.write(alt_script)
+
+        st.subheader("Voiceover")
+        st.write(voiceover)
+
+        st.subheader("Captions")
+        st.write(captions)
+
+        st.subheader("Hashtags")
+        st.write(hashtags)
+
+        st.subheader("Thumbnail Text Ideas")
+        st.write(thumbnail_text)
+
+        st.subheader("SEO Product Description")
+        st.write(product_description)
+
+        st.subheader("CTA Pack")
+        st.write(cta_pack)
+
 
 # --- TTS (placeholder) ---
 def render_tts_tab(client):
