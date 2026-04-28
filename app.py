@@ -1,685 +1,477 @@
-import os
-import time
-import io
-from typing import List, Dict
-
 import streamlit as st
-from fpdf import FPDF
+import requests
+import uuid
+import boto3
+from botocore.client import Config
+import json
 
-import google.genai as genai
-from google.genai import types as gtypes
+# ---------------------------------------------------------
+# PAGE CONFIG
+# ---------------------------------------------------------
+st.set_page_config(
+    page_title="GoCopy AI – TikTok & Shorts Engine",
+    page_icon="🎬",
+    layout="wide",
+)
 
-# =========================
-# CONFIG & CONSTANTS
-# =========================
+# ---------------------------------------------------------
+# CONFIG — pulled from Streamlit Secrets
+# ---------------------------------------------------------
+TIKTOK_CLIENT_KEY = st.secrets["TIKTOK_CLIENT_KEY"]
+TIKTOK_CLIENT_SECRET = st.secrets["TIKTOK_CLIENT_SECRET"]
+TIKTOK_REDIRECT_URI = st.secrets["TIKTOK_REDIRECT_URI"]
+TIKTOK_SCOPES = st.secrets["TIKTOK_SCOPES"]  # e.g. "user.info.basic,video.publish"
 
-APP_NAME = "GocopAi Agency Pro"
-PRIMARY_MODEL = "models/gemini-2.5-flash" 
+R2_ACCOUNT_ID = st.secrets["R2_ACCOUNT_ID"]
+R2_ACCESS_KEY_ID = st.secrets["R2_ACCESS_KEY_ID"]
+R2_SECRET_ACCESS_KEY = st.secrets["R2_SECRET_ACCESS_KEY"]
+R2_BUCKET_NAME = st.secrets["R2_BUCKET_NAME"]
+R2_PUBLIC_DOMAIN = "https://pub-9fb90bf1cfc49bb9876390bc254d1"  # your actual public bucket URL
+
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+
+# ---------------------------------------------------------
+# SESSION STATE
+# ---------------------------------------------------------
+if "tiktok_access_token" not in st.session_state:
+    st.session_state.tiktok_access_token = None
+
+if "tiktok_refresh_token" not in st.session_state:
+    st.session_state.tiktok_refresh_token = None
+
+if "oauth_state" not in st.session_state:
+    st.session_state.oauth_state = None
+
+if "last_video_url" not in st.session_state:
+    st.session_state.last_video_url = None
+
+if "last_title" not in st.session_state:
+    st.session_state.last_title = None
+
+if "last_caption" not in st.session_state:
+    st.session_state.last_caption = None
+
+if "last_hashtags" not in st.session_state:
+    st.session_state.last_hashtags = None
+
+# ---------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------
+def generate_state() -> str:
+    return str(uuid.uuid4())
 
 
-# License tiers
-TIER_FREE = "Free"
-TIER_PRO = "Pro"
-TIER_AGENCY = "Agency"
-TIER_ADMIN = "Admin"
+def get_r2_client():
+    return boto3.client(
+        "s3",
+        endpoint_url=f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+        aws_access_key_id=R2_ACCESS_KEY_ID,
+        aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+        config=Config(signature_version="s3v4"),
+        region_name="auto",
+    )
 
-# Hard-coded license keys for demo
-LICENSE_MAP = {
-    "FREE123": TIER_FREE,
-    "PRO123": TIER_PRO,
-    "AGENCY123": TIER_AGENCY,
-    "ADMIN123": TIER_ADMIN,
-}
 
-# =========================
-# GEMINI CLIENT
-# =========================
-
-def get_gemini_client(api_key: str):
-    if not api_key:
-        return None
-    try:
-        client = genai.Client(api_key=api_key)
-        return client
-    except Exception:
-        return None
-
-def gemini_generate_text(client, prompt: str, system_instruction: str = "") -> str:
-    if client is None:
-        return "⚠️ No valid Gemini client configured."
-    try:
-        contents = prompt
-        if system_instruction:
-            contents = f"{system_instruction}\n\n{prompt}"
-
-        resp = client.models.generate_content(
-            model=PRIMARY_MODEL,
-            contents=contents,
-            config=gtypes.GenerateContentConfig(
-                temperature=0.8,
-                max_output_tokens=1024,
-            ),
-        )
-        return resp.text or ""
-    except Exception as e:
-        return f"⚠️ Gemini error: {e}"
-
-# =========================
-# SESSION STATE HELPERS
-# =========================
-
-def init_session_state():
-    defaults = {
-        "tier": TIER_FREE,
-        "license_key": "",
-        "clients": [],
-        "selected_client": None,
-        "brand_dna": {},
+def call_openai_chat(system_prompt: str, user_prompt: str) -> str:
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json",
     }
-    for k, v in defaults.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.7,
+    }
+    r = requests.post(url, headers=headers, json=payload)
+    r.raise_for_status()
+    data = r.json()
+    return data["choices"][0]["message"]["content"].strip()
 
-def set_tier_from_license(license_key: str):
-    tier = LICENSE_MAP.get(license_key.strip(), TIER_FREE)
-    st.session_state.tier = tier
-    st.session_state.license_key = license_key.strip()
 
-def tier_at_least(required: str) -> bool:
-    order = [TIER_FREE, TIER_PRO, TIER_AGENCY, TIER_ADMIN]
-    return order.index(st.session_state.tier) >= order.index(required)
+# ---------------------------------------------------------
+# AI COPY GENERATION
+# ---------------------------------------------------------
+def generate_title(description: str) -> str:
+    system = "You write short, high-converting titles for TikTok/Shorts/Reels."
+    user = f"Write a punchy title (max 60 characters) for this video: {description}"
+    return call_openai_chat(system, user)
 
-# =========================
-# UI: PAGE & STYLES
-# =========================
 
-def setup_page():
-    st.set_page_config(page_title=APP_NAME, layout="wide")
+def generate_caption(description: str) -> str:
+    system = "You write engaging, conversion-focused social video captions."
+    user = (
+        "Write a compelling caption (2–4 short lines) for this short-form video. "
+        "Make it conversational and hooky. Video description: " + description
+    )
+    return call_openai_chat(system, user)
+
+
+def generate_hashtags(description: str, niche: str = "business, marketing, creators") -> str:
+    system = "You generate optimized hashtags for TikTok, YouTube Shorts, and Instagram Reels."
+    user = (
+        "Based on this video description, generate 10–15 hashtags. "
+        "Mix broad and niche tags. Return them as a single line, space-separated.\n\n"
+        f"Video description: {description}\nNiche: {niche}"
+    )
+    return call_openai_chat(system, user)
+
+
+def generate_capcut_template_notes(description: str) -> str:
+    system = "You design simple CapCut template instructions for editors."
+    user = (
+        "Create a simple CapCut template plan for this video. "
+        "Include: scene beats, text overlays, B-roll ideas, and transitions. "
+        f"Video description: {description}"
+    )
+    return call_openai_chat(system, user)
+
+
+# ---------------------------------------------------------
+# TIKTOK OAUTH — STEP 1: LOGIN URL
+# ---------------------------------------------------------
+def get_tiktok_login_url() -> str:
+    state = generate_state()
+    st.session_state.oauth_state = state
+
+    return (
+        "https://www.tiktok.com/v2/auth/authorize/"
+        f"?client_key={TIKTOK_CLIENT_KEY}"
+        f"&response_type=code"
+        f"&scope={TIKTOK_SCOPES}"
+        f"&redirect_uri={TIKTOK_REDIRECT_URI}"
+        f"&state={state}"
+    )
+
+
+# ---------------------------------------------------------
+# TIKTOK OAUTH — STEP 2: EXCHANGE CODE FOR TOKEN
+# ---------------------------------------------------------
+def exchange_code_for_token(code: str) -> bool:
+    url = "https://open.tiktokapis.com/v2/oauth/token/"
+
+    payload = {
+        "client_key": TIKTOK_CLIENT_KEY,
+        "client_secret": TIKTOK_CLIENT_SECRET,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": TIKTOK_REDIRECT_URI,
+    }
+
+    r = requests.post(url, data=payload)
+    data = r.json()
+
+    if "access_token" in data:
+        st.session_state.tiktok_access_token = data["access_token"]
+        st.session_state.tiktok_refresh_token = data.get("refresh_token")
+        return True
+
+    st.error("Failed to exchange TikTok OAuth code.")
+    st.json(data)
+    return False
+
+
+# ---------------------------------------------------------
+# R2 UPLOAD — DIRECT UPLOAD
+# ---------------------------------------------------------
+def upload_to_r2(file) -> str:
+    r2 = get_r2_client()
+    key = f"uploads/{uuid.uuid4()}_{file.name}"
+
+    r2.upload_fileobj(
+        Fileobj=file,
+        Bucket=R2_BUCKET_NAME,
+        Key=key,
+        ExtraArgs={"ContentType": file.type},
+    )
+
+    public_url = f"{R2_PUBLIC_DOMAIN}/{key}"
+    return public_url
+
+
+# ---------------------------------------------------------
+# TIKTOK DRAFT UPLOAD
+# ---------------------------------------------------------
+def upload_to_tiktok_draft(video_url: str, title: str) -> dict:
+    url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
+
+    headers = {
+        "Authorization": f"Bearer {st.session_state.tiktok_access_token}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "post_info": {
+            "title": title or "Uploaded via GoCopy AI",
+            "privacy_level": "SELF",  # draft
+        },
+        "source_info": {
+            "source": "PULL_FROM_URL",
+            "video_url": video_url,
+        },
+    }
+
+    r = requests.post(url, headers=headers, json=payload)
+    try:
+        return r.json()
+    except Exception:
+        return {"status_code": r.status_code, "text": r.text}
+
+
+# ---------------------------------------------------------
+# TAB 0 — DASHBOARD
+# ---------------------------------------------------------
+def dashboard_tab():
+    st.header("GoCopy AI – Short‑Form Content Engine")
     st.markdown(
         """
-        <style>
-        .main { background-color: #050505; color: #ffffff; }
-        h1, h2, h3, h4 {
-            color: #02f2ff !important;
-            font-family: 'Inter', sans-serif;
-            text-transform: uppercase;
-        }
-        .stButton>button {
-            background: linear-gradient(90deg, #00f2ff, #0072ff);
-            color: white;
-            border-radius: 12px;
-            font-weight: 600;
-            border: none;
-            height: 3rem;
-        }
-        .locked-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: #ff006e;
-            color: white;
-            font-size: 0.7rem;
-            margin-left: 6px;
-        }
-        .tier-pill {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: #111;
-            border: 1px solid #02f2ff55;
-            font-size: 0.75rem;
-            margin-left: 8px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
+Welcome to **GoCopy AI** — your pipeline for:
+
+- 🎬 Uploading videos to **R2** and pushing them to **TikTok Drafts**
+- ✍️ Generating **titles, captions, and hashtags** with AI
+- 🎨 Getting **CapCut template notes** for editors
+- 📦 Reusing the same asset across **TikTok, Shorts, and Reels**
+
+Use the tabs above to move through the workflow.
+"""
     )
 
-# =========================
-# SIDEBAR: ACCESS & KEYS
-# =========================
+    if st.session_state.last_video_url:
+        st.subheader("Latest uploaded video")
+        st.code(st.session_state.last_video_url, language="text")
+        if st.session_state.last_title:
+            st.write("**Title:**", st.session_state.last_title)
+        if st.session_state.last_caption:
+            st.write("**Caption:**")
+            st.write(st.session_state.last_caption)
+        if st.session_state.last_hashtags:
+            st.write("**Hashtags:**")
+            st.code(st.session_state.last_hashtags, language="text")
 
-def sidebar_access():
-    with st.sidebar:
-        st.title("★ MEMBER ACCESS")
 
-        # License key
-        license_key = st.text_input("Enter License Key", type="password")
-        if st.button("Unlock / Update License"):
-            set_tier_from_license(license_key)
-            st.success(f"Tier set to: {st.session_state.tier}")
+# ---------------------------------------------------------
+# TAB 1 — TIKTOK UPLOADER
+# ---------------------------------------------------------
+def tiktok_uploader_tab():
+    st.header("🎬 TikTok Uploader")
 
-        st.markdown(
-            f"**Current Tier:** `{st.session_state.tier}`"
-            f" <span class='tier-pill'>{st.session_state.tier}</span>",
-            unsafe_allow_html=True,
-        )
+    # Handle OAuth callback
+    try:
+        query_params = st.query_params  # new API
+    except Exception:
+        query_params = st.experimental_get_query_params()  # fallback
 
-        # Gemini API key
-        st.markdown("---")
-        st.subheader("🔑 Gemini API")
-        gemini_key = st.text_input(
-            "Gemini API Key",
-            type="password",
-            help="Your Google AI Studio / Gemini API key.",
-        )
+    if "code" in query_params and not st.session_state.tiktok_access_token:
+        code = query_params["code"]
+        if isinstance(code, list):
+            code = code[0]
 
-        # Stripe / upgrade
-        st.markdown("---")
-        st.subheader("🚀 Upgrade")
-        st.markdown(
-            "- **Pro / Agency**: Unlock Brand DNA, Clients, Video Studio, Autopilot, Strategist, SEO.\n"
-            "- **Admin**: Unlock Admin Panel."
-        )
-        st.markdown(
-            "[Upgrade via Stripe](https://your-stripe-checkout-link.com)",
-            unsafe_allow_html=True,
-        )
+        state = query_params.get("state", "")
+        if isinstance(state, list):
+            state = state[0]
 
-    return gemini_key
+        if state != st.session_state.oauth_state:
+            st.error("OAuth state mismatch. Please try logging in again.")
+            st.stop()
 
-# =========================
-# FEATURE LOCK WRAPPER
-# =========================
+        if exchange_code_for_token(code):
+            st.success("TikTok login successful!")
 
-def require_tier(required_tier: str, feature_name: str):
-    if not tier_at_least(required_tier):
-        st.warning(
-            f"🔒 **{feature_name}** is locked. "
-            f"Requires **{required_tier}** tier or higher."
-        )
-        st.stop()
-
-# =========================
-# MODULES
-# =========================
-
-# --- Ads Engine ---
-def render_ads_tab(client):
-    st.header("Ad Generator")
-    col1, col2 = st.columns(2)
-    with col1:
-        product = st.text_input("Product / Service", "1-on-1 Fitness Coaching")
-        offer = st.text_area("Offer / Angle", "12-week transformation for busy executives over 40.")
-    with col2:
-        audience = st.text_input("Target Audience", "Busy executives over 40")
-        platform = st.selectbox("Platform", ["Facebook", "Instagram", "YouTube", "Google Ads"])
-
-    if st.button("Generate Ad Copy"):
-        prompt = f"""
-        You are a world-class direct response copywriter.
-
-        Create 3 high-conversion ad variations for:
-        - Product: {product}
-        - Offer: {offer}
-        - Audience: {audience}
-        - Platform: {platform}
-
-        Each ad should include:
-        - Hook
-        - Body
-        - Call to action
-        - Optional emoji usage (tasteful)
-        """
-        with st.spinner("Generating ad copy..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### Generated Ads")
-        st.write(text)
-
-# --- Video Scripts ---
-def render_video_scripts_tab(client):
-    st.header("Video Script Generator")
-    topic = st.text_input("Video Topic", "High-conversion ads for coaches")
-    length = st.selectbox("Script Length", ["Short (30-60s)", "Medium (2-3 min)", "Long (5+ min)"])
-    style = st.selectbox("Style", ["TikTok / Reels", "YouTube Tutorial", "Webinar Intro", "VSL"])
-
-    if st.button("Generate Video Script"):
-        prompt = f"""
-        You are a senior video scriptwriter.
-
-        Create a {length} script in the style of {style}.
-
-        Topic: {topic}
-
-        Include:
-        - Hook
-        - Story / context
-        - Value / teaching
-        - CTA
-        - Stage directions (brief)
-        """
-        with st.spinner("Writing script..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### Script")
-        st.write(text)
-
-# --- Business Strategist ---
-def render_strategist_tab(client):
-    require_tier(TIER_PRO, "Business Strategist Agent")
-    st.header("Business Strategist Agent")
-    niche = st.text_input("Niche / Industry", "Fitness coaches for executives")
-    goal = st.text_area("Primary Goal", "Generate 20 high-ticket clients in 90 days.")
-    constraints = st.text_area("Constraints", "Low ad budget, small email list.")
-
-    if st.button("Generate Strategy"):
-        prompt = f"""
-        You are a senior marketing strategist.
-
-        Niche: {niche}
-        Goal: {goal}
-        Constraints: {constraints}
-
-        Deliver:
-        - 3 core growth pillars
-        - Acquisition strategy
-        - Nurture strategy
-        - Offer strategy
-        - 90-day action plan (weekly breakdown)
-        """
-        with st.spinner("Designing strategy..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### Strategy")
-        st.write(text)
-
-# --- SEO Engine ---
-def render_seo_tab(client):
-    require_tier(TIER_PRO, "SEO Engine")
-    st.header("SEO Engine")
-    website = st.text_input("Website / Brand", "example.com")
-    topic = st.text_input("Primary Topic", "High-ticket coaching")
-    if st.button("Generate SEO Plan"):
-        prompt = f"""
-        You are an SEO strategist.
-
-        Brand website: {website}
-        Topic: {topic}
-
-        Deliver:
-        - 10 primary keywords
-        - 10 long-tail keywords
-        - 5 content pillars
-        - 10 blog post ideas with titles
-        - Internal linking strategy
-        """
-        with st.spinner("Building SEO plan..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### SEO Plan")
-        st.write(text)
-
-# --- Autopilot Agent ---
-def render_autopilot_tab(client):
-    require_tier(TIER_AGENCY, "Autopilot Agent")
-    st.header("Autopilot Agent")
-    system_desc = st.text_area(
-        "Describe your current marketing system",
-        "We run some ads, have a basic funnel, and send occasional emails."
-    )
-    if st.button("Generate Autopilot Blueprint"):
-        prompt = f"""
-        You are a systems architect for marketing automation.
-
-        Current system:
-        {system_desc}
-
-        Design an 'autopilot' system that:
-        - Captures leads
-        - Nurtures them
-        - Books calls
-        - Follows up automatically
-        - Uses email + SMS + retargeting
-
-        Deliver:
-        - System diagram (described in text)
-        - Tools stack recommendation
-        - Implementation steps
-        """
-        with st.spinner("Designing autopilot system..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### Autopilot Blueprint")
-        st.write(text)
-
-# --- Brand DNA ---
-def render_brand_dna_tab(client):
-    require_tier(TIER_PRO, "Brand DNA Engine")
-    st.header("Brand DNA Engine")
-    url = st.text_input("Client Website URL", "https://example.com")
-    brand_notes = st.text_area("Brand Notes (optional)", "")
-
-    if st.button("Extract Brand DNA"):
-        prompt = f"""
-        You are a brand strategist.
-
-        Analyze this brand:
-        Website: {url}
-        Extra notes: {brand_notes}
-
-        Deliver a 'Brand DNA' summary:
-        - Core promise
-        - Ideal client
-        - Voice & tone
-        - Values
-        - Differentiators
-        - Big idea
-        """
-        with st.spinner("Extracting Brand DNA..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### Brand DNA")
-        st.write(text)
-
-        # Save last DNA in session for PDF export
-        st.session_state.brand_dna = {
-            "url": url,
-            "notes": brand_notes,
-            "dna_text": text,
-        }
-
-    if st.session_state.get("brand_dna", {}).get("dna_text"):
-        if st.button("Download Brand DNA PDF"):
-            pdf_bytes = create_brand_dna_pdf(st.session_state.brand_dna)
-            st.download_button(
-                "Download PDF",
-                data=pdf_bytes,
-                file_name="brand_dna.pdf",
-                mime="application/pdf",
-            )
-
-def create_brand_dna_pdf(dna: Dict) -> bytes:
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "Brand DNA Report", ln=True)
-    pdf.ln(5)
-
-    pdf.set_font("Arial", "", 12)
-    pdf.multi_cell(0, 8, f"Website: {dna.get('url', '')}")
-    pdf.ln(3)
-    if dna.get("notes"):
-        pdf.multi_cell(0, 8, f"Notes: {dna.get('notes', '')}")
-        pdf.ln(3)
-
-    pdf.multi_cell(0, 8, dna.get("dna_text", ""))
-
-    buffer = io.BytesIO()
-    pdf.output(buffer)
-    return buffer.getvalue()
-
-# --- Clients ---
-def render_clients_tab():
-    require_tier(TIER_PRO, "Client Manager")
-    st.header("Client Manager")
-
-    with st.expander("Add New Client"):
-        name = st.text_input("Client Name")
-        niche = st.text_input("Niche")
-        notes = st.text_area("Notes")
-        if st.button("Save Client"):
-            if name:
-                st.session_state.clients.append(
-                    {"name": name, "niche": niche, "notes": notes}
-                )
-                st.success("Client added.")
-            else:
-                st.error("Client name is required.")
-
-    if not st.session_state.clients:
-        st.info("No clients yet. Add one above.")
+    # If not logged in
+    if not st.session_state.tiktok_access_token:
+        st.info("Connect your TikTok account to start uploading drafts.")
+        login_url = get_tiktok_login_url()
+        st.link_button("Login with TikTok", login_url)
         return
 
-    names = [c["name"] for c in st.session_state.clients]
-    selected = st.selectbox("Select Client", names)
-    st.session_state.selected_client = selected
+    st.success("Connected to TikTok")
 
-    client = next((c for c in st.session_state.clients if c["name"] == selected), None)
-    if client:
-        st.subheader("Client Details")
-        st.write(f"**Name:** {client['name']}")
-        st.write(f"**Niche:** {client['niche']}")
-        st.write(f"**Notes:** {client['notes']}")
-
-# --- Video Studio ---
-def render_video_studio_tab(client):
-    require_tier(TIER_AGENCY, "Video Studio")
-    st.header("Video Studio")
-
-    st.markdown("### Advanced Video Ad Generator")
-
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([2, 1])
 
     with col1:
-        product_name = st.text_input("Product Name", "Example Product")
-        product_benefits = st.text_area("Top Benefits (3–5)", "Benefit 1\nBenefit 2\nBenefit 3")
-        target_audience = st.text_input("Target Audience", "Busy professionals, parents, creators")
-        price_point = st.text_input("Price Point (optional)", "")
-        offer = st.text_input("Offer (optional)", "20% off today only")
+        uploaded_file = st.file_uploader("Upload a video", type=["mp4", "mov", "m4v"])
+        description = st.text_area(
+            "Describe your video (for AI copy)",
+            placeholder="e.g. 30-second tip about how to get more clients using short-form content…",
+        )
+
+        auto_copy = st.checkbox("Generate AI title, caption & hashtags", value=True)
+
+        manual_title = st.text_input("Custom title (optional)")
+        manual_caption = st.text_area("Custom caption (optional)")
+        manual_hashtags = st.text_input("Custom hashtags (optional, space-separated)")
+
+        if uploaded_file and st.button("Upload to R2 and send to TikTok Drafts"):
+            if auto_copy and not description:
+                st.warning("Add a short description so AI can generate copy.")
+                st.stop()
+
+            with st.spinner("Uploading video to R2…"):
+                video_url = upload_to_r2(uploaded_file)
+
+            st.success("Uploaded to R2")
+            st.write("R2 URL:")
+            st.code(video_url, language="text")
+
+            # AI copy
+            if auto_copy:
+                with st.spinner("Generating AI title, caption, and hashtags…"):
+                    title = generate_title(description)
+                    caption = generate_caption(description)
+                    hashtags = generate_hashtags(description)
+            else:
+                title = manual_title or "Uploaded via GoCopy AI"
+                caption = manual_caption or ""
+                hashtags = manual_hashtags or ""
+
+            # Save to session
+            st.session_state.last_video_url = video_url
+            st.session_state.last_title = title
+            st.session_state.last_caption = caption
+            st.session_state.last_hashtags = hashtags
+
+            st.subheader("Final copy for TikTok")
+            st.write("**Title:**", title)
+            st.write("**Caption:**")
+            st.write(caption)
+            if hashtags:
+                st.write("**Hashtags:**")
+                st.code(hashtags, language="text")
+
+            with st.spinner("Sending video to TikTok Drafts…"):
+                result = upload_to_tiktok_draft(video_url, title)
+
+            st.write("TikTok API Response:")
+            st.json(result)
 
     with col2:
-        brand_tone = st.selectbox(
-            "Brand Tone",
-            ["UGC Casual", "Professional", "Aesthetic Minimal", "Hype/Energetic", "Luxury", "Playful"]
+        st.subheader("Tips")
+        st.markdown(
+            """
+- Use **short, punchy descriptions** for better AI copy.
+- Keep videos under **60 seconds** for best TikTok performance.
+- You can reuse the same R2 URL in the **Multi‑Platform Export** tab.
+"""
         )
-        primary_platform = st.selectbox(
-            "Primary Platform",
-            ["TikTok", "Instagram Reels", "YouTube Shorts", "Facebook/IG Feed"]
-        )
-        st.info("Upload product images in CapCut when using your template.")
-
-    if st.button("Generate Full Video Package"):
-        with st.spinner("Generating hooks, scripts, captions, hashtags, and more..."):
-
-            # HOOKS
-            hook_prompt = f"""
-            Generate 3 short, punchy hooks for a video ad about {product_name}.
-            Audience: {target_audience}
-            Tone: {brand_tone}
-            Platform: {primary_platform}
-            Each hook under 8 words.
-            """
-            hooks = gemini_generate_text(client, hook_prompt)
-
-            # MAIN SCRIPT
-            script_prompt = f"""
-            Write a high-converting short-form video ad script for {product_name}.
-            Benefits: {product_benefits}
-            Audience: {target_audience}
-            Tone: {brand_tone}
-            Platform: {primary_platform}
-            Offer: {offer}
-            Price: {price_point}
-
-            Structure:
-            - Hook
-            - Problem
-            - Product as solution
-            - Benefits
-            - Social proof vibe
-            - CTA
-
-            Keep under 14 seconds.
-            """
-            main_script = gemini_generate_text(client, script_prompt)
-
-            # A/B SCRIPT
-            ab_prompt = f"""
-            Create an alternative A/B test script for {product_name}.
-            Use a different hook angle.
-            Keep under 14 seconds.
-            Audience: {target_audience}
-            Tone: {brand_tone}
-            """
-            alt_script = gemini_generate_text(client, ab_prompt)
-
-            # VOICEOVER
-            vo_prompt = f"""
-            Convert this script into a natural, human-sounding voiceover.
-            Keep pacing tight.
-            Script:
-            {main_script}
-            """
-            voiceover = gemini_generate_text(client, vo_prompt)
-
-            # CAPTIONS
-            captions_prompt = f"""
-            Convert this script into TikTok-style captions.
-            Add emojis where natural.
-            Break lines for rhythm.
-            Script:
-            {main_script}
-            """
-            captions = gemini_generate_text(client, captions_prompt)
-
-            # HASHTAGS
-            hashtags_prompt = f"""
-            Generate 12–18 hashtags for {product_name}.
-            Platform: {primary_platform}
-            Audience: {target_audience}
-            Mix broad + niche + intent-based.
-            """
-            hashtags = gemini_generate_text(client, hashtags_prompt)
-
-            # THUMBNAIL TEXT
-            thumb_prompt = f"""
-            Generate 5 bold, 2–5 word thumbnail text ideas for {product_name}.
-            Tone: {brand_tone}
-            """
-            thumbnail_text = gemini_generate_text(client, thumb_prompt)
-
-            # PRODUCT DESCRIPTION
-            desc_prompt = f"""
-            Write an SEO-friendly Shopify product description for {product_name}.
-            Benefits: {product_benefits}
-            Audience: {target_audience}
-            """
-            product_description = gemini_generate_text(client, desc_prompt)
-
-            # CTA PACK
-            cta_prompt = f"""
-            Generate a CTA pack for {product_name}:
-            - 5 ultra-short CTAs (2–4 words)
-            - 5 medium CTAs (1 sentence)
-            - 3 long CTAs (2–3 sentences)
-            Tone: {brand_tone}
-            """
-            cta_pack = gemini_generate_text(client, cta_prompt)
-
-        # OUTPUT
-        st.subheader("Hooks")
-        st.write(hooks)
-
-        st.subheader("Main Script")
-        st.write(main_script)
-
-        st.subheader("A/B Script Variant")
-        st.write(alt_script)
-
-        st.subheader("Voiceover")
-        st.write(voiceover)
-
-        st.subheader("Captions")
-        st.write(captions)
-
-        st.subheader("Hashtags")
-        st.write(hashtags)
-
-        st.subheader("Thumbnail Text Ideas")
-        st.write(thumbnail_text)
-
-        st.subheader("SEO Product Description")
-        st.write(product_description)
-
-        st.subheader("CTA Pack")
-        st.write(cta_pack)
 
 
-# --- TTS (placeholder) ---
-def render_tts_tab(client):
-    require_tier(TIER_AGENCY, "TTS Engine")
-    st.header("TTS Engine (Concept)")
-    st.info("This demo version only generates scripts. You can connect a real TTS API later.")
-    script_topic = st.text_input("Script Topic", "Welcome to GocopAi Agency Pro")
-    if st.button("Generate Voiceover Script"):
-        prompt = f"""
-        Write a concise, friendly voiceover script about:
-        {script_topic}
+# ---------------------------------------------------------
+# TAB 2 — AI COPY LAB
+# ---------------------------------------------------------
+def ai_copy_lab_tab():
+    st.header("✍️ AI Copy Lab")
 
-        Tone: confident, warm, expert.
-        Length: 30-45 seconds.
-        """
-        with st.spinner("Writing script..."):
-            text = gemini_generate_text(client, prompt)
-        st.markdown("### Voiceover Script")
-        st.write(text)
-
-# --- Admin ---
-def render_admin_tab():
-    require_tier(TIER_ADMIN, "Admin Panel")
-    st.header("Admin Panel")
-    st.write("Manage tiers, licenses, and system settings (demo).")
-    st.json(
-        {
-            "current_tier": st.session_state.tier,
-            "license_key": st.session_state.license_key,
-            "clients_count": len(st.session_state.clients),
-        }
+    description = st.text_area(
+        "Describe your video or hook",
+        placeholder="e.g. A 45-second rant about why most creators overthink their first video…",
+    )
+    niche = st.text_input(
+        "Niche (for hashtags)",
+        value="business, marketing, creators",
     )
 
-# =========================
+    if st.button("Generate copy"):
+        if not description:
+            st.warning("Please describe your video first.")
+            st.stop()
+
+        with st.spinner("Generating title…"):
+            title = generate_title(description)
+
+        with st.spinner("Generating caption…"):
+            caption = generate_caption(description)
+
+        with st.spinner("Generating hashtags…"):
+            hashtags = generate_hashtags(description, niche)
+
+        st.subheader("Title")
+        st.write(title)
+
+        st.subheader("Caption")
+        st.write(caption)
+
+        st.subheader("Hashtags")
+        st.code(hashtags, language="text")
+
+        st.session_state.last_title = title
+        st.session_state.last_caption = caption
+        st.session_state.last_hashtags = hashtags
+
+
+# ---------------------------------------------------------
+# TAB 3 — MULTI‑PLATFORM EXPORT
+# ---------------------------------------------------------
+def multi_platform_tab():
+    st.header("📦 Multi‑Platform Export")
+
+    if not st.session_state.last_video_url:
+        st.info("Upload a video in the TikTok Uploader tab first.")
+        return
+
+    video_url = st.session_state.last_video_url
+    title = st.session_state.last_title or "Your short-form video"
+    caption = st.session_state.last_caption or ""
+    hashtags = st.session_state.last_hashtags or ""
+
+    st.subheader("Core Asset")
+    st.write("**R2 Video URL:**")
+    st.code(video_url, language="text")
+
+    st.subheader("TikTok")
+    st.write("**Title:**", title)
+    st.write("**Caption:**")
+    st.write(caption)
+    if hashtags:
+        st.write("**Hashtags:**")
+        st.code(hashtags, language="text")
+
+    st.subheader("YouTube Shorts")
+    yt_title = f"{title} #shorts"
+    st.write("**Title:**", yt_title)
+    st.write("**Description:**")
+    st.write(caption + "\n\n" + hashtags)
+
+    st.subheader("Instagram Reels")
+    st.write("**Caption:**")
+    st.write(caption + "\n\n" + hashtags)
+
+    st.markdown("---")
+    st.subheader("CapCut Template Notes")
+    if st.button("Generate CapCut template notes"):
+        description = (
+            caption if caption else "Short-form vertical video for TikTok/Shorts/Reels."
+        )
+        with st.spinner("Generating CapCut template notes…"):
+            notes = generate_capcut_template_notes(description)
+        st.text_area("CapCut template plan", value=notes, height=250)
+
+
+# ---------------------------------------------------------
 # MAIN APP
-# =========================
-
+# ---------------------------------------------------------
 def main():
-    init_session_state()
-    setup_page()
-
-    gemini_key = sidebar_access()
-    client = get_gemini_client(gemini_key)
-
-    st.title(APP_NAME)
+    st.title("GoCopy AI – Short‑Form Content Engine")
 
     tabs = st.tabs(
         [
-            "Ads",
-            "Video Scripts",
-            "Strategist",
-            "SEO",
-            "Autopilot",
-            "Brand DNA",
-            "Clients",
-            "Video Studio",
-            "TTS",
-            "Admin",
+            "Dashboard",
+            "TikTok Uploader",
+            "AI Copy Lab",
+            "Multi‑Platform Export",
         ]
     )
 
     with tabs[0]:
-        render_ads_tab(client)
-
+        dashboard_tab()
     with tabs[1]:
-        render_video_scripts_tab(client)
-
+        tiktok_uploader_tab()
     with tabs[2]:
-        render_strategist_tab(client)
-
+        ai_copy_lab_tab()
     with tabs[3]:
-        render_seo_tab(client)
-
-    with tabs[4]:
-        render_autopilot_tab(client)
-
-    with tabs[5]:
-        render_brand_dna_tab(client)
-
-    with tabs[6]:
-        render_clients_tab()
-
-    with tabs[7]:
-        render_video_studio_tab(client)
-
-    with tabs[8]:
-        render_tts_tab(client)
-
-    with tabs[9]:
-        render_admin_tab()
+        multi_platform_tab()
 
 
 if __name__ == "__main__":
