@@ -1,0 +1,436 @@
+You are an expert full‑stack engineer and product architect.
+
+Your job is to build a **complete, production‑ready SaaS application** called:
+
+    EV Reliable Route & Chargers
+
+This is NOT a toy app. It is a **world‑class EV navigation and reliability platform** that combines:
+
+- EV charger reliability
+- Real‑time traffic and route management
+- Custom 3‑word precision location system
+- Crowdsourced reporting (chargers + traffic)
+- Premium subscription features
+- Fleet, government, and OEM‑ready architecture
+
+==================================================
+TECH STACK & CONSTRAINTS
+==================================================
+
+Use this stack:
+
+- Backend: Supabase (Postgres, Auth, Edge Functions, Row Level Security)
+- Frontend: Streamlit (Python)
+- Payments: Stripe (subscriptions)
+- Scripting: Python (data ingestion, traffic integration)
+- Edge Functions: TypeScript/JavaScript (Supabase functions)
+- Hosting: Streamlit Cloud (frontend) + Supabase (backend)
+
+Code must be:
+
+- Production‑grade
+- Well‑structured
+- Copy‑paste‑ready
+- Minimal but sensible dependencies
+- Clearly commented where needed
+
+==================================================
+CORE PRODUCT VISION
+==================================================
+
+You are building the **Waze of EV charging**:
+
+- Shows EV chargers with **reliability scores**
+- Avoids broken chargers and bad networks
+- Uses **real‑time traffic** to reroute around:
+  - Roadworks
+  - Closures
+  - Accidents
+  - Queuing traffic
+- Uses a **custom 3‑word precision location system** for chargers
+- Lets users **report issues**:
+  - Charger working / broken
+  - Traffic incidents (accident, roadworks, closure, queue, other)
+- Provides **premium features** via Stripe subscription
+- Is architected for:
+  - Individual drivers (B2C)
+  - Fleets (B2B)
+  - Councils/government (B2G)
+  - OEMs / navigation providers (B2B2C)
+
+The mission:  
+**Become the single source of truth for EV charger reliability and EV‑friendly routing.**
+
+==================================================
+FEATURE SET (MUST IMPLEMENT)
+==================================================
+
+You MUST implement at least the following:
+
+1. **EV Charger Reliability Platform**
+   - Ingest chargers from:
+     - NCR (National Chargepoint Registry – UK)
+     - OpenChargeMap (global)
+   - Store chargers in Supabase.
+   - Compute and display reliability scores per charger.
+   - Allow users to report chargers as:
+     - Working
+     - Broken
+   - Update reliability based on reports.
+
+2. **Custom 3‑Word Precision Location System**
+   - Implement a deterministic 3‑word encoding for (lat, lng).
+   - Use a fixed dictionary of EV‑themed words (e.g. charge, spark, grid, route, plug, power, etc.).
+   - Function: `encode_three_word(lat: float, lng: float) -> str`
+   - Store result in `chargers.three_word_code`.
+   - Display this code in the UI for each charger.
+   - This replaces What3Words with a fully owned system.
+
+3. **Real‑Time Traffic & Route Management**
+   - Integrate with at least one traffic/routing API (pluggable abstraction), e.g.:
+     - OpenRouteService
+     - HERE
+     - TomTom
+     - (or similar)
+   - Implement a routing service that:
+     - Takes origin + destination (lat/lng or address).
+     - Optionally includes charger stops.
+     - Returns:
+       - Route geometry/steps
+       - ETA
+       - Distance
+       - Known traffic incidents on route
+     - Avoids:
+       - Closed roads
+       - Heavy congestion where possible
+       - User‑reported incidents (from traffic_reports table).
+   - Provide a **“shortest/quickest route”** option that:
+     - Minimises total travel time
+     - Avoids unreliable chargers
+     - Avoids traffic issues where possible
+
+4. **Crowdsourced Reporting (Chargers + Traffic)**
+   - Global “Report Issue” button in the UI.
+   - When clicked, user can:
+     - Report charger:
+       - Working
+       - Broken
+     - Report traffic:
+       - Accident
+       - Roadworks
+       - Closure
+       - Queue
+       - Other
+   - For traffic reports:
+     - Capture location (lat/lng or via map click).
+     - Capture type, severity, and description.
+   - Store in `reports_chargers` and `traffic_reports` tables.
+   - Show traffic reports on the map as overlays.
+
+5. **Premium Subscription (Stripe)**
+   - Free users:
+     - Can see chargers and basic reliability.
+     - Can report issues.
+   - Premium users (£4.99/mo, configurable):
+     - Reliable‑only filter (hide low‑reliability chargers).
+     - “Verified in last X hours” highlight.
+     - Advanced route planning:
+       - Avoid unreliable chargers
+       - Avoid heavy traffic
+       - Suggest optimal charger stops
+     - Access to hidden/community‑discovered chargers (future‑ready).
+   - Implement:
+     - Supabase Edge Function `create-checkout-session`:
+       - Accepts user_id, email.
+       - Creates Stripe Checkout session for subscription.
+       - Returns URL.
+     - Supabase Edge Function `stripe-webhook`:
+       - Handles:
+         - `checkout.session.completed` → set `users.is_premium = true`
+         - `customer.subscription.deleted` → set `users.is_premium = false`
+   - Streamlit:
+     - Sidebar “Upgrade to Premium” button.
+     - Calls `create-checkout-session`.
+     - Opens returned Stripe URL.
+
+6. **Fleets, Government, OEM‑Ready Architecture**
+   - Implement database tables and basic UI hooks for:
+     - Fleets:
+       - fleets
+       - fleet_members
+     - Regions:
+       - regions
+       - charger_regions
+   - Provide simple dashboards (even if basic) for:
+     - Worst chargers by region.
+     - Regions with most issues.
+     - Traffic hotspots.
+   - Make it easy to later:
+     - Expose APIs for OEMs.
+     - Provide fleet dashboards.
+     - Provide council/government dashboards.
+
+==================================================
+DATABASE SCHEMA (SUPABASE)
+==================================================
+
+Create SQL migrations for at least:
+
+- **chargers**
+  - id uuid primary key default gen_random_uuid()
+  - name text not null
+  - location_lat double precision not null
+  - location_lng double precision not null
+  - network text
+  - power_kw double precision
+  - address text
+  - region text
+  - source text default 'ncr' -- 'ncr' | 'ocm' | 'user'
+  - last_verified timestamptz
+  - reliability_score double precision default 0
+  - three_word_code text
+  - is_active boolean default true
+
+- **reports_chargers**
+  - id uuid primary key default gen_random_uuid()
+  - charger_id uuid references chargers(id) on delete cascade
+  - status text check (status in ('working', 'broken')) not null
+  - created_at timestamptz default now()
+  - user_id uuid
+
+- **traffic_reports**
+  - id uuid primary key default gen_random_uuid()
+  - type text check (type in ('accident', 'roadworks', 'closure', 'queue', 'other')) not null
+  - description text
+  - location_lat double precision not null
+  - location_lng double precision not null
+  - severity int
+  - created_at timestamptz default now()
+  - user_id uuid
+  - is_active boolean default true
+
+- **users**
+  - id uuid primary key -- same as auth.users.id
+  - email text unique not null
+  - is_premium boolean default false
+  - subscription_id text
+  - created_at timestamptz default now()
+
+- **fleets**
+  - id uuid primary key default gen_random_uuid()
+  - name text not null
+  - contact_email text
+  - created_at timestamptz default now()
+
+- **fleet_members**
+  - id uuid primary key default gen_random_uuid()
+  - fleet_id uuid references fleets(id) on delete cascade
+  - user_id uuid references users(id) on delete cascade
+  - role text default 'driver'
+
+- **regions**
+  - id uuid primary key default gen_random_uuid()
+  - name text not null
+  - code text
+  - created_at timestamptz default now()
+
+- **charger_regions**
+  - id uuid primary key default gen_random_uuid()
+  - charger_id uuid references chargers(id) on delete cascade
+  - region_id uuid references regions(id) on delete cascade
+
+Implement basic Row Level Security (RLS) so users can only see/modify their own sensitive data where appropriate.
+
+==================================================
+EDGE FUNCTIONS (SUPABASE)
+==================================================
+
+Implement at least:
+
+1. **reliability** (Edge Function)
+   - Triggered by DB webhook on INSERT into `reports_chargers`.
+   - Fetch all reports for that charger.
+   - Compute reliability_score = working / total (optionally weighted by recency).
+   - Update `chargers.reliability_score` and `chargers.last_verified`.
+
+2. **create-checkout-session** (Edge Function)
+   - Accepts JSON: { user_id, email }.
+   - Uses STRIPE_SECRET_KEY and STRIPE_PRICE_ID.
+   - Creates Stripe Checkout session (subscription mode).
+   - Returns JSON: { url }.
+
+3. **stripe-webhook** (Edge Function)
+   - Verifies Stripe webhook using STRIPE_WEBHOOK_SECRET.
+   - Handles:
+     - checkout.session.completed → set users.is_premium = true, store subscription_id.
+     - customer.subscription.deleted → set users.is_premium = false.
+   - Uses SUPABASE_SERVICE_ROLE_KEY to update users table.
+
+==================================================
+DATA INGESTION SCRIPTS (PYTHON)
+==================================================
+
+Create Python scripts:
+
+1. **import_ncr.py**
+   - Fetch chargers from NCR API (use placeholder URL and TODO).
+   - Map fields to chargers table.
+   - Upsert chargers into Supabase (by name + lat/lng or other stable key).
+   - Mark source = 'ncr'.
+
+2. **import_ocm.py**
+   - Fetch chargers from OpenChargeMap API.
+   - Map fields to chargers table.
+   - Upsert chargers into Supabase.
+   - Mark source = 'ocm'.
+
+These scripts should be runnable locally and later via cron/GitHub Actions.
+
+==================================================
+TRAFFIC SERVICE ABSTRACTION
+==================================================
+
+Create a Python module, e.g. `traffic_service.py`, that:
+
+- Uses a pluggable traffic API provider (e.g. OpenRouteService).
+- Has functions like:
+  - `get_route(origin, destination, waypoints=None, avoid_incidents=True) -> RouteResult`
+- RouteResult should include:
+  - Geometry or steps
+  - ETA
+  - Distance
+  - List of incidents on route (if available)
+- Optionally cross‑reference `traffic_reports` from Supabase to avoid user‑reported issues.
+
+==================================================
+FRONTEND (STREAMLIT) – PAGES & UI
+==================================================
+
+Build a Streamlit app with:
+
+1. **Authentication / Account**
+   - Use Supabase auth (magic link or simple login).
+   - Store user in session.
+   - Show whether user is premium.
+   - Sidebar:
+     - Account info
+     - “Upgrade to Premium” button (Stripe).
+
+2. **Main Sections / Tabs**
+   - **Map & Chargers**
+     - Map of chargers.
+     - Marker colour based on reliability_score.
+     - Click marker → show:
+       - Name
+       - Network
+       - Power
+       - Reliability %
+       - Last verified
+       - 3‑word code
+       - Buttons:
+         - Report Working
+         - Report Broken
+   - **Route Planner**
+     - Inputs:
+       - Start (address or lat/lng)
+       - Destination (address or lat/lng)
+       - Optional vehicle range (future‑ready)
+       - Toggles:
+         - Avoid unreliable chargers
+         - Avoid heavy traffic
+     - Output:
+       - Suggested route
+       - Charger stops (if needed)
+       - ETA
+       - Distance
+       - List of chargers on route with reliability.
+   - **Report Issue**
+     - Global “Report Issue” button (always visible in sidebar or header).
+     - When clicked:
+       - Choose:
+         - Charger issue
+         - Traffic issue
+       - For charger issue:
+         - Select charger
+         - Working / Broken
+       - For traffic issue:
+         - Type (accident, roadworks, closure, queue, other)
+         - Location (map click or lat/lng)
+         - Severity
+         - Description
+   - **Insights / Admin (basic)**
+     - Simple tables/plots:
+       - Worst chargers by reliability.
+       - Regions with most charger issues.
+       - Regions with most traffic reports.
+
+3. **Premium Gating**
+   - Certain features (e.g. reliable‑only filter, advanced routing) should:
+     - Be visible but disabled for non‑premium users.
+     - Show a message: “Premium feature – upgrade to unlock”.
+
+==================================================
+PROJECT STRUCTURE
+==================================================
+
+Create a structure like:
+
+- `/streamlit-frontend/`
+  - `app.py`
+  - `requirements.txt`
+  - `.streamlit/secrets.example.toml`
+- `/supabase-backend/`
+  - `/migrations/001_init_schema.sql`
+  - `/functions/reliability/index.ts`
+  - `/functions/create-checkout-session/index.ts`
+  - `/functions/stripe-webhook/index.ts`
+  - `/scripts/import_ncr.py`
+  - `/scripts/import_ocm.py`
+  - `/traffic/traffic_service.py`
+
+==================================================
+ENVIRONMENT & CONFIG
+==================================================
+
+Document required environment variables:
+
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+- STRIPE_SECRET_KEY
+- STRIPE_PRICE_ID
+- STRIPE_WEBHOOK_SECRET
+- TRAFFIC_API_KEY (for chosen provider)
+- NCR_API_URL / KEY (if needed)
+- OCM_API_KEY (if needed)
+
+Provide:
+
+- Example `.env` or `secrets.toml`.
+- Clear instructions on:
+  - How to run locally.
+  - How to deploy Supabase migrations.
+  - How to deploy Edge Functions.
+  - How to deploy Streamlit app.
+
+==================================================
+DELIVERABLES
+==================================================
+
+You MUST output:
+
+1. Full project structure.
+2. All key code files (not stubs – working implementations).
+3. SQL schema for Supabase.
+4. Edge Functions code.
+5. Streamlit app code.
+6. Python scripts for NCR/OCM import.
+7. Traffic service abstraction.
+8. Example config/secrets.
+9. Step‑by‑step run/deploy instructions.
+
+Do NOT summarise.  
+Do NOT hand‑wave.  
+Generate real, working, copy‑paste‑ready code and commands.
+
+If something needs a real API key or URL, use a placeholder and add a clear TODO comment.

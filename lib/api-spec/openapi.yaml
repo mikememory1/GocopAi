@@ -1,0 +1,2198 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: GoCopyAI API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User management
+  - name: quiz
+    description: Business Maturity Quiz
+  - name: ai
+    description: AI generation tools
+  - name: billing
+    description: Billing and credits
+  - name: admin
+    description: Admin operations
+  - name: social
+    description: Social media publishing
+  - name: storage
+    description: Object storage upload and serving
+  - name: video
+    description: Video production pipeline (voiceover, talking head, b-roll)
+  - name: brand-profiles
+    description: Brand voice profiles
+  - name: video-projects
+    description: Video project workspace
+  - name: calendar
+    description: Content calendar
+  - name: feedback
+    description: Generation feedback and learning
+  - name: competitor
+    description: Competitor analysis
+  - name: templates
+    description: Content templates library
+  - name: workspaces
+    description: Agency workspaces and team management
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── User / Profile ──────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/me/ensure:
+    post:
+      operationId: ensureUser
+      tags: [users]
+      summary: Ensure user record exists (upsert on first login)
+      responses:
+        "200":
+          description: User record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── Dashboard summary ────────────────────────────────────────────────────────
+  /users/me/dashboard:
+    get:
+      operationId: getDashboardSummary
+      tags: [users]
+      summary: Get dashboard summary (credits, recent generations, last quiz)
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  # ── Quiz ─────────────────────────────────────────────────────────────────────
+  /quiz/questions:
+    get:
+      operationId: getQuizQuestions
+      tags: [quiz]
+      summary: Get all quiz questions
+      responses:
+        "200":
+          description: Quiz questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuizQuestion"
+
+  /quiz/submit:
+    post:
+      operationId: submitQuiz
+      tags: [quiz]
+      summary: Submit quiz answers and get results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizSubmission"
+      responses:
+        "200":
+          description: Quiz results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizResult"
+
+  /quiz/results:
+    get:
+      operationId: listQuizResults
+      tags: [quiz]
+      summary: List quiz results for current user
+      responses:
+        "200":
+          description: Quiz results list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuizResult"
+
+  /quiz/results/{id}:
+    get:
+      operationId: getQuizResult
+      tags: [quiz]
+      summary: Get a specific quiz result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quiz result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── AI Generation Tools ───────────────────────────────────────────────────────
+  /ai/generate:
+    post:
+      operationId: generateContent
+      tags: [ai]
+      summary: Generate AI content for any tool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRequest"
+      responses:
+        "200":
+          description: Generated content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateResult"
+        "402":
+          description: Insufficient credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ai/generations:
+    get:
+      operationId: listGenerations
+      tags: [ai]
+      summary: List AI generations for current user
+      parameters:
+        - name: tool_type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Generations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiGeneration"
+
+  /ai/generations/{id}:
+    get:
+      operationId: getGeneration
+      tags: [ai]
+      summary: Get a specific AI generation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Generation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiGeneration"
+
+  # ── Billing ───────────────────────────────────────────────────────────────────
+  /billing/plans:
+    get:
+      operationId: getPlans
+      tags: [billing]
+      summary: Get available subscription plans
+      responses:
+        "200":
+          description: Plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Plan"
+
+  /billing/checkout:
+    post:
+      operationId: createCheckout
+      tags: [billing]
+      summary: Create a Stripe checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutRequest"
+      responses:
+        "200":
+          description: Checkout URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResponse"
+
+  /billing/portal:
+    post:
+      operationId: createPortalSession
+      tags: [billing]
+      summary: Create a Stripe customer portal session
+      responses:
+        "200":
+          description: Portal URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalResponse"
+
+  /billing/topup:
+    post:
+      operationId: topupCredits
+      tags: [billing]
+      summary: Purchase a one-time credit top-up pack
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopupRequest"
+      responses:
+        "200":
+          description: Checkout URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResponse"
+
+  /billing/webhook:
+    post:
+      operationId: stripeWebhook
+      tags: [billing]
+      summary: Handle Stripe webhooks
+      responses:
+        "200":
+          description: OK
+
+  # ── Admin ─────────────────────────────────────────────────────────────────────
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin]
+      summary: List all users (admin only)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+
+  /admin/users/{id}/credits:
+    patch:
+      operationId: adminAdjustCredits
+      tags: [admin]
+      summary: Adjust user credits (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditAdjustment"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/users/{id}/role:
+    patch:
+      operationId: adminUpdateRole
+      tags: [admin]
+      summary: Update user role (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/generations:
+    get:
+      operationId: adminListGenerations
+      tags: [admin]
+      summary: List all AI generations (admin only)
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: integer
+        - name: tool_type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Generations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiGeneration"
+
+  /admin/stats:
+    get:
+      operationId: adminGetStats
+      tags: [admin]
+      summary: Get aggregate admin stats (quiz, users, billing)
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  # ── Video Production Pipeline ────────────────────────────────────────────────
+  /video/voiceover:
+    post:
+      operationId: videoVoiceover
+      tags: [video]
+      summary: Generate voiceover audio from script text (ElevenLabs)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoVoiceoverRequest"
+      responses:
+        "200":
+          description: Audio generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceoverResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "402":
+          description: Insufficient credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /video/voices:
+    get:
+      operationId: getVideoVoices
+      tags: [video]
+      summary: List available ElevenLabs voices
+      responses:
+        "200":
+          description: Available voices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoicesList"
+
+  /video/talking-head:
+    post:
+      operationId: videoTalkingHead
+      tags: [video]
+      summary: Start a D-ID talking head video job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoTalkingHeadRequest"
+      responses:
+        "200":
+          description: Job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoJobStarted"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "402":
+          description: Insufficient credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /video/broll:
+    post:
+      operationId: videoBroll
+      tags: [video]
+      summary: Start Runway b-roll clip generation from script
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoBrollRequest"
+      responses:
+        "200":
+          description: Jobs started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrollJobsStarted"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "402":
+          description: Insufficient credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /video/jobs/{id}:
+    get:
+      operationId: getVideoJob
+      tags: [video]
+      summary: Poll a video generation job for status and result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoJobStatus"
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Brand Profiles ──────────────────────────────────────────────────────────
+  /brand-profiles:
+    get:
+      operationId: listBrandProfiles
+      tags: [brand-profiles]
+      summary: List brand profiles
+      responses:
+        "200":
+          description: List of brand profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrandProfile"
+    post:
+      operationId: createBrandProfile
+      tags: [brand-profiles]
+      summary: Create brand profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandProfileInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandProfile"
+
+  /brand-profiles/{id}:
+    get:
+      operationId: getBrandProfile
+      tags: [brand-profiles]
+      summary: Get brand profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Brand profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandProfile"
+        "404":
+          description: Not found
+    put:
+      operationId: updateBrandProfile
+      tags: [brand-profiles]
+      summary: Update brand profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandProfileInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandProfile"
+    delete:
+      operationId: deleteBrandProfile
+      tags: [brand-profiles]
+      summary: Delete brand profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Video Projects ───────────────────────────────────────────────────────────
+  /video-projects:
+    get:
+      operationId: listVideoProjects
+      tags: [video-projects]
+      summary: List video projects
+      responses:
+        "200":
+          description: List of video projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VideoProject"
+    post:
+      operationId: createVideoProject
+      tags: [video-projects]
+      summary: Create video project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoProject"
+
+  /video-projects/{id}:
+    get:
+      operationId: getVideoProject
+      tags: [video-projects]
+      summary: Get video project with job details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Video project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoProjectDetail"
+        "404":
+          description: Not found
+    put:
+      operationId: updateVideoProject
+      tags: [video-projects]
+      summary: Update video project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoProjectInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoProject"
+    delete:
+      operationId: deleteVideoProject
+      tags: [video-projects]
+      summary: Delete video project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Content Calendar ─────────────────────────────────────────────────────────
+  /calendar:
+    get:
+      operationId: listCalendarItems
+      tags: [calendar]
+      summary: List calendar items
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: string
+            description: YYYY-MM
+      responses:
+        "200":
+          description: List of calendar items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarItem"
+    post:
+      operationId: createCalendarItem
+      tags: [calendar]
+      summary: Create calendar item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarItem"
+
+  /calendar/{id}:
+    put:
+      operationId: updateCalendarItem
+      tags: [calendar]
+      summary: Update calendar item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarItemInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarItem"
+    delete:
+      operationId: deleteCalendarItem
+      tags: [calendar]
+      summary: Delete calendar item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /calendar/ai-fill:
+    post:
+      operationId: aiFillCalendar
+      tags: [calendar]
+      summary: AI-fill empty calendar slots for a month
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiFillCalendarRequest"
+      responses:
+        "200":
+          description: Generated and saved items
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, creditsUsed]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CalendarItem"
+                  creditsUsed:
+                    type: number
+
+  # ── Generation Feedback ──────────────────────────────────────────────────────
+  /ai/feedback:
+    post:
+      operationId: submitFeedback
+      tags: [feedback]
+      summary: Submit feedback on a generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackInput"
+      responses:
+        "201":
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: integer
+
+  /ai/feedback/stats:
+    get:
+      operationId: getFeedbackStats
+      tags: [feedback]
+      summary: Get feedback stats for current user
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackStats"
+
+  # ── A/B Variant Generator ────────────────────────────────────────────────────
+  /ai/variants:
+    post:
+      operationId: generateVariants
+      tags: [ai]
+      summary: Generate multiple copy variants
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VariantsRequest"
+      responses:
+        "200":
+          description: Variants
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantsResult"
+
+  # ── Competitor Analysis ──────────────────────────────────────────────────────
+  /competitor/analyse:
+    post:
+      operationId: analyseCompetitor
+      tags: [competitor]
+      summary: Analyse a competitor URL and generate counter-strategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompetitorAnalyseRequest"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitorAnalyseResult"
+
+  # ── Templates ────────────────────────────────────────────────────────────────
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List all content templates
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContentTemplate"
+
+  # ── Workspaces ───────────────────────────────────────────────────────────────
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      tags: [workspaces]
+      summary: List workspaces user belongs to
+      responses:
+        "200":
+          description: Workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceWithRole"
+    post:
+      operationId: createWorkspace
+      tags: [workspaces]
+      summary: Create a new workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceWithRole"
+
+  /workspaces/{id}:
+    get:
+      operationId: getWorkspace
+      tags: [workspaces]
+      summary: Get workspace details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceDetail"
+    put:
+      operationId: updateWorkspace
+      tags: [workspaces]
+      summary: Update workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceWithRole"
+    delete:
+      operationId: deleteWorkspace
+      tags: [workspaces]
+      summary: Delete workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workspaces/{id}/members:
+    get:
+      operationId: listWorkspaceMembers
+      tags: [workspaces]
+      summary: List workspace members
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceMemberDetail"
+    post:
+      operationId: inviteWorkspaceMember
+      tags: [workspaces]
+      summary: Invite member by email
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteMemberRequest"
+      responses:
+        "201":
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMemberDetail"
+
+  /workspaces/{id}/members/{memberId}:
+    delete:
+      operationId: removeWorkspaceMember
+      tags: [workspaces]
+      summary: Remove member from workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    User:
+      type: object
+      required: [id, clerkId, email, role, credits, createdAt]
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        businessName:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [user, admin]
+        credits:
+          type: number
+        stripeCustomerId:
+          type: ["string", "null"]
+        stripeSubscriptionId:
+          type: ["string", "null"]
+        currentPlan:
+          type: ["string", "null"]
+        planStatus:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        lastLoginAt:
+          type: ["string", "null"]
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        website:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [credits, totalGenerations, recentGenerations]
+      properties:
+        credits:
+          type: number
+        totalGenerations:
+          type: integer
+        recentGenerations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiGeneration"
+        lastQuizResult:
+          $ref: "#/components/schemas/QuizResult"
+        currentPlan:
+          type: ["string", "null"]
+
+    QuizQuestion:
+      type: object
+      required: [id, text, type, category, weight, options]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        type:
+          type: string
+          enum: [single, multiple, likert]
+        category:
+          type: string
+        weight:
+          type: number
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizOption"
+
+    QuizOption:
+      type: object
+      required: [value, label]
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        score:
+          type: number
+
+    QuizSubmission:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: object
+          additionalProperties:
+            type: string
+
+    QuizResult:
+      type: object
+      required: [id, overallScore, stage, categoryScores, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        overallScore:
+          type: number
+        stage:
+          type: string
+        categoryScores:
+          type: object
+          additionalProperties:
+            type: number
+        generatedPlan:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    GenerateRequest:
+      type: object
+      required: [toolType, inputs]
+      properties:
+        toolType:
+          type: string
+          enum: [video_script, video_hook, video_outline, seo_outline, seo_meta, seo_keywords, social_post, social_carousel, social_calendar, ads_copy, ads_headline, ads_angle, blog_draft, blog_intro, blog_conclusion, generic]
+        inputs:
+          type: object
+          additionalProperties:
+            type: string
+        model:
+          type: ["string", "null"]
+
+    GenerateResult:
+      type: object
+      required: [id, output, creditsUsed]
+      properties:
+        id:
+          type: integer
+        output:
+          type: string
+        creditsUsed:
+          type: number
+        tokensEstimate:
+          type: integer
+
+    AiGeneration:
+      type: object
+      required: [id, toolType, inputSummary, output, creditsUsed, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        toolType:
+          type: string
+        inputSummary:
+          type: string
+        output:
+          type: string
+        tokensEstimate:
+          type: ["integer", "null"]
+        creditsUsed:
+          type: number
+        createdAt:
+          type: string
+
+    Plan:
+      type: object
+      required: [id, name, price, credits, features]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        interval:
+          type: string
+        credits:
+          type: integer
+        features:
+          type: array
+          items:
+            type: string
+        stripePriceId:
+          type: ["string", "null"]
+
+    TopupRequest:
+      type: object
+      required: [packId]
+      properties:
+        packId:
+          type: string
+
+    CheckoutRequest:
+      type: object
+      required: [planId]
+      properties:
+        planId:
+          type: string
+
+    CheckoutResponse:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+
+    PortalResponse:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+
+    AdminUsersResponse:
+      type: object
+      required: [users, total]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+
+    CreditAdjustment:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+        reason:
+          type: string
+
+    RoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [user, admin]
+
+    AdminStats:
+      type: object
+      required: [totalUsers, totalGenerations, quizStats]
+      properties:
+        totalUsers:
+          type: integer
+        totalGenerations:
+          type: integer
+        creditsIssued:
+          type: number
+        quizStats:
+          type: object
+          additionalProperties:
+            type: integer
+        generationsByTool:
+          type: object
+          additionalProperties:
+            type: integer
+
+    SocialAccount:
+      type: object
+      required: [id, platform]
+      properties:
+        id:
+          type: integer
+        platform:
+          type: string
+        platformUsername:
+          type: string
+          nullable: true
+        platformPageName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    SocialAccountsResponse:
+      type: object
+      required: [accounts]
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialAccount"
+
+    SocialPublishRequest:
+      type: object
+      required: [text, platforms]
+      properties:
+        text:
+          type: string
+        platforms:
+          type: array
+          items:
+            type: string
+        mediaUrl:
+          type: string
+          nullable: true
+        mediaType:
+          type: string
+          enum: [image, video]
+          nullable: true
+
+    SocialPublishResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: object
+          additionalProperties:
+            type: object
+
+    TelegramConnectRequest:
+      type: object
+      required: [botToken, chatId]
+      properties:
+        botToken:
+          type: string
+        chatId:
+          type: string
+
+    ScheduledPost:
+      type: object
+      required: [id, platforms, caption, scheduledAt, status, createdAt]
+      properties:
+        id:
+          type: integer
+        platforms:
+          type: array
+          items:
+            type: string
+        caption:
+          type: string
+        mediaObjectPath:
+          type: string
+          nullable: true
+        mediaType:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, publishing, published, failed, cancelled]
+        publishResults:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: object
+        errorMessage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateScheduleRequest:
+      type: object
+      required: [platforms, caption, scheduledAt]
+      properties:
+        platforms:
+          type: array
+          items:
+            type: string
+        caption:
+          type: string
+        mediaObjectPath:
+          type: string
+          nullable: true
+        mediaType:
+          type: string
+          enum: [image, video]
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+
+    ScheduledPostsResponse:
+      type: object
+      required: [posts]
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduledPost"
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+
+    VideoVoiceoverRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        provider:
+          type: string
+          enum: [elevenlabs, openai]
+          nullable: true
+        voiceId:
+          type: string
+          nullable: true
+
+    VoiceoverResult:
+      type: object
+      required: [audioBase64, mimeType, durationEstimate, creditsUsed]
+      properties:
+        audioBase64:
+          type: string
+        mimeType:
+          type: string
+        durationEstimate:
+          type: integer
+        creditsUsed:
+          type: integer
+
+    VoicesList:
+      type: object
+      required: [voices]
+      properties:
+        voices:
+          type: array
+          items:
+            type: object
+            required: [voice_id, name, category]
+            properties:
+              voice_id:
+                type: string
+              name:
+                type: string
+              category:
+                type: string
+
+    VideoTalkingHeadRequest:
+      type: object
+      required: [script]
+      properties:
+        script:
+          type: string
+        provider:
+          type: string
+          enum: [did, heygen]
+          nullable: true
+        presenterImageUrl:
+          type: string
+          nullable: true
+
+    VideoBrollRequest:
+      type: object
+      required: [script]
+      properties:
+        script:
+          type: string
+        provider:
+          type: string
+          enum: [runway_gen3, runway_gen4, luma]
+          nullable: true
+
+    VideoJobStarted:
+      type: object
+      required: [jobId, creditsUsed]
+      properties:
+        jobId:
+          type: integer
+        externalJobId:
+          type: string
+        creditsUsed:
+          type: integer
+
+    BrollJobsStarted:
+      type: object
+      required: [jobs, scenes, creditsUsed]
+      properties:
+        jobs:
+          type: array
+          items:
+            type: object
+            required: [jobId, scene, externalJobId]
+            properties:
+              jobId:
+                type: integer
+              scene:
+                type: string
+              externalJobId:
+                type: string
+        scenes:
+          type: array
+          items:
+            type: string
+        creditsUsed:
+          type: integer
+
+    VideoJobStatus:
+      type: object
+      required: [id, jobType, status, inputText, createdAt]
+      properties:
+        id:
+          type: integer
+        jobType:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        outputUrl:
+          type: string
+          nullable: true
+        inputText:
+          type: string
+        errorMessage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Brand Profiles ─────────────────────────────────────────────────────────
+    BrandProfile:
+      type: object
+      required: [id, userId, name, tone, platforms, isDefault, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        industry:
+          type: string
+          nullable: true
+        productDescription:
+          type: string
+          nullable: true
+        targetAudience:
+          type: string
+          nullable: true
+        tone:
+          type: string
+        platforms:
+          type: array
+          items:
+            type: string
+        brandValues:
+          type: string
+          nullable: true
+        competitors:
+          type: string
+          nullable: true
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    BrandProfileInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+          nullable: true
+        productDescription:
+          type: string
+          nullable: true
+        targetAudience:
+          type: string
+          nullable: true
+        tone:
+          type: string
+          nullable: true
+        platforms:
+          type: array
+          items:
+            type: string
+          nullable: true
+        brandValues:
+          type: string
+          nullable: true
+        competitors:
+          type: string
+          nullable: true
+        isDefault:
+          type: boolean
+          nullable: true
+
+    # ── Video Projects ──────────────────────────────────────────────────────────
+    VideoProject:
+      type: object
+      required: [id, userId, name, brollJobIds, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        script:
+          type: string
+          nullable: true
+        voiceoverJobId:
+          type: integer
+          nullable: true
+        talkingHeadJobId:
+          type: integer
+          nullable: true
+        brollJobIds:
+          type: array
+          items:
+            type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    VideoProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        script:
+          type: string
+          nullable: true
+        voiceoverJobId:
+          type: integer
+          nullable: true
+        talkingHeadJobId:
+          type: integer
+          nullable: true
+        brollJobIds:
+          type: array
+          items:
+            type: integer
+          nullable: true
+
+    VideoProjectDetail:
+      type: object
+      required: [id, userId, name, brollJobIds, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        script:
+          type: string
+          nullable: true
+        voiceoverJobId:
+          type: integer
+          nullable: true
+        talkingHeadJobId:
+          type: integer
+          nullable: true
+        brollJobIds:
+          type: array
+          items:
+            type: integer
+        voiceoverJob:
+          $ref: "#/components/schemas/VideoJobStatus"
+          nullable: true
+        talkingHeadJob:
+          $ref: "#/components/schemas/VideoJobStatus"
+          nullable: true
+        brollJobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/VideoJobStatus"
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Content Calendar ────────────────────────────────────────────────────────
+    CalendarItem:
+      type: object
+      required: [id, userId, scheduledDate, platform, contentType, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        brandProfileId:
+          type: integer
+          nullable: true
+        scheduledDate:
+          type: string
+        platform:
+          type: string
+        contentType:
+          type: string
+        title:
+          type: string
+          nullable: true
+        content:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+        generationId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CalendarItemInput:
+      type: object
+      required: [scheduledDate, platform, contentType]
+      properties:
+        brandProfileId:
+          type: integer
+          nullable: true
+        scheduledDate:
+          type: string
+        platform:
+          type: string
+        contentType:
+          type: string
+        title:
+          type: string
+          nullable: true
+        content:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, scheduled, published]
+          nullable: true
+
+    AiFillCalendarRequest:
+      type: object
+      required: [month, platforms, postsPerWeek]
+      properties:
+        month:
+          type: string
+          description: YYYY-MM
+        platforms:
+          type: array
+          items:
+            type: string
+        postsPerWeek:
+          type: integer
+          minimum: 1
+          maximum: 21
+        brandProfileId:
+          type: integer
+          nullable: true
+        topic:
+          type: string
+          nullable: true
+
+    # ── Feedback ────────────────────────────────────────────────────────────────
+    FeedbackInput:
+      type: object
+      required: [generationId, rating]
+      properties:
+        generationId:
+          type: integer
+        rating:
+          type: string
+          enum: [liked, disliked]
+        note:
+          type: string
+          nullable: true
+
+    FeedbackStats:
+      type: object
+      required: [totalLiked, totalDisliked, likeRate, topToolTypes]
+      properties:
+        totalLiked:
+          type: integer
+        totalDisliked:
+          type: integer
+        likeRate:
+          type: number
+        topToolTypes:
+          type: array
+          items:
+            type: object
+            required: [toolType, liked, disliked]
+            properties:
+              toolType:
+                type: string
+              liked:
+                type: integer
+              disliked:
+                type: integer
+
+    # ── A/B Variants ────────────────────────────────────────────────────────────
+    VariantsRequest:
+      type: object
+      required: [toolType, inputs, count]
+      properties:
+        toolType:
+          type: string
+        inputs:
+          type: object
+          additionalProperties:
+            type: string
+        count:
+          type: integer
+          minimum: 2
+          maximum: 5
+        angles:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    VariantsResult:
+      type: object
+      required: [variants, creditsUsed]
+      properties:
+        variants:
+          type: array
+          items:
+            type: object
+            required: [id, angle, output]
+            properties:
+              id:
+                type: integer
+              angle:
+                type: string
+              output:
+                type: string
+        creditsUsed:
+          type: number
+
+    # ── Competitor Analysis ─────────────────────────────────────────────────────
+    CompetitorAnalyseRequest:
+      type: object
+      required: [competitorUrl]
+      properties:
+        competitorUrl:
+          type: string
+        yourProduct:
+          type: string
+          nullable: true
+        yourAudience:
+          type: string
+          nullable: true
+
+    CompetitorAnalyseResult:
+      type: object
+      required: [summary, strengths, weaknesses, opportunities, counterStrategy, adAngles, contentIdeas, creditsUsed]
+      properties:
+        summary:
+          type: string
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        opportunities:
+          type: array
+          items:
+            type: string
+        counterStrategy:
+          type: string
+        adAngles:
+          type: array
+          items:
+            type: string
+        contentIdeas:
+          type: array
+          items:
+            type: string
+        creditsUsed:
+          type: number
+
+    # ── Templates ───────────────────────────────────────────────────────────────
+    ContentTemplate:
+      type: object
+      required: [id, category, name, framework, description, fields, prompt]
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+        name:
+          type: string
+        framework:
+          type: string
+        description:
+          type: string
+        fields:
+          type: array
+          items:
+            type: object
+            required: [key, label, placeholder]
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+              placeholder:
+                type: string
+        prompt:
+          type: string
+        exampleOutput:
+          type: string
+          nullable: true
+
+    # ── Workspaces ──────────────────────────────────────────────────────────────
+    WorkspaceWithRole:
+      type: object
+      required: [id, name, slug, credits, role, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        plan:
+          type: string
+          nullable: true
+        credits:
+          type: number
+        logoUrl:
+          type: string
+          nullable: true
+        primaryColor:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [owner, admin, member]
+        createdAt:
+          type: string
+          format: date-time
+
+    InviteMemberRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+
+    WorkspaceInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        primaryColor:
+          type: string
+          nullable: true
+
+    WorkspaceDetail:
+      type: object
+      required: [id, name, slug, credits, role, members, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        plan:
+          type: string
+          nullable: true
+        credits:
+          type: number
+        logoUrl:
+          type: string
+          nullable: true
+        primaryColor:
+          type: string
+          nullable: true
+        role:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceMemberDetail"
+        createdAt:
+          type: string
+          format: date-time
+
+    WorkspaceMemberDetail:
+      type: object
+      required: [id, userId, workspaceId, role, name, email, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        workspaceId:
+          type: integer
+        role:
+          type: string
+          enum: [owner, admin, member]
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time

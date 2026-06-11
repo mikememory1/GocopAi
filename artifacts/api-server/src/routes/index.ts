@@ -1,0 +1,42 @@
+import { Router } from "express";
+import healthRouter from "./health";
+import usersRouter from "./users";
+import quizRouter from "./quiz";
+import aiRouter from "./ai";
+import billingRouter from "./billing";
+import adminRouter from "./admin";
+import socialRouter from "./social";
+import storageRouter from "./storage";
+import videoRouter from "./video";
+import brandProfilesRouter from "./brand-profiles";
+import videoProjectsRouter from "./video-projects";
+import calendarRouter from "./calendar";
+import feedbackRouter from "./feedback";
+import variantsRouter from "./variants";
+import competitorRouter from "./competitor";
+import templatesRouter from "./templates";
+import workspacesRouter from "./workspaces";
+import shopifyRouter from "./shopify";
+
+const router = Router();
+
+router.use("/", healthRouter);
+router.use("/users", usersRouter);
+router.use("/quiz", quizRouter);
+router.use("/ai", aiRouter);
+router.use("/ai/feedback", feedbackRouter);
+router.use("/ai/variants", variantsRouter);
+router.use("/billing", billingRouter);
+router.use("/admin", adminRouter);
+router.use("/social", socialRouter);
+router.use("/storage", storageRouter);
+router.use("/video", videoRouter);
+router.use("/brand-profiles", brandProfilesRouter);
+router.use("/video-projects", videoProjectsRouter);
+router.use("/calendar", calendarRouter);
+router.use("/competitor", competitorRouter);
+router.use("/templates", templatesRouter);
+router.use("/workspaces", workspacesRouter);
+router.use("/shopify", shopifyRouter);
+
+export default router;

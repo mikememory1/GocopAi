@@ -1,0 +1,463 @@
+You are an expert SaaS architect and full‑stack developer building a production‑ready app in Supercool Coder.
+
+GOAL  
+Build a complete, production‑ready SaaS called **GoCopyAI** with:
+- Full marketing AI platform (video, SEO, social, ads, blog, generic tools)
+- Full Business Maturity Quiz as the homepage funnel
+- Full auth, roles, admin, billing, credits, logs, settings
+- Clean, modern UI
+- All logic fully wired
+- Nothing left for the human to do except:
+  - Add API keys (OpenAI/Groq/DeepSeek/etc.)
+  - Add Stripe keys
+  - Configure domain
+
+You must generate a **coherent, consistent, fully working codebase**.  
+No placeholders for core logic. No “TODOs” for essential features.  
+Everything must be implemented.
+
+--------------------------------------------------
+HIGH‑LEVEL APP STRUCTURE
+--------------------------------------------------
+
+The app is a multi‑tenant SaaS with:
+
+1. Public marketing layer
+   - Homepage = Business Maturity Quiz funnel
+   - Simple top nav: Logo, “Pricing”, “Login”, “Get Started”
+   - SEO‑friendly, fast, responsive
+
+2. Auth & user system
+   - Email/password signup & login
+   - Password reset flow
+   - Email verification flag
+   - Basic profile (name, business name, website, role)
+   - Role system: `user`, `admin`
+
+3. Business Maturity Quiz funnel (HOMEPAGE)
+   - Quiz is the main entry point at `/`
+   - Multi‑step quiz (20–30 questions)
+   - Question types:
+     - Single choice (radio)
+     - Multiple choice (checkbox)
+     - Likert scale (1–5)
+   - Categories (examples):
+     - Strategy & Positioning
+     - Offer & Product
+     - Marketing & Traffic
+     - Sales & Conversion
+     - Operations & Delivery
+     - Data & Tracking
+   - Each question belongs to a category and has a weight.
+   - On completion:
+     - Compute scores per category and overall
+     - Classify user into a “stage” (e.g. “Early”, “Scaling”, “Optimised”)
+     - Generate a **personalised action plan** using the LLM
+   - Store quiz results in DB:
+     - user_id (nullable for guests)
+     - answers JSON
+     - category_scores JSON
+     - overall_score
+     - stage
+     - generated_plan (text/JSON)
+     - created_at
+   - Show a results page:
+     - Summary of scores
+     - Stage label
+     - Key strengths & weaknesses
+     - Personalised action plan (sections, bullet points)
+   - CTA on results page:
+     - “Create your GoCopyAI account to unlock all tools”
+     - If not logged in → signup/login
+     - If logged in → button to go to dashboard
+
+4. Dashboard (after login)
+   - Route: `/app`
+   - Left sidebar navigation:
+     - Dashboard (overview)
+     - Video Tools
+     - SEO Tools
+     - Social Tools
+     - Ads Tools
+     - Blog Tools
+     - Generic Tool
+     - Quiz History
+     - Billing
+     - Settings
+     - (Admin only) Admin Panel
+   - Top bar:
+     - User avatar/menu
+     - Credits remaining
+     - Quick link to “Add credits / Manage plan”
+
+5. Credits & usage system
+   - Each user has a `credits` balance (integer or decimal).
+   - Every AI generation consumes credits based on:
+     - Tool type
+     - Approximate token/complexity
+   - If user has insufficient credits:
+     - Show clear message
+     - Link to Billing page
+   - Admin can:
+     - Manually adjust credits
+     - See usage logs
+
+6. Billing (Stripe)
+   - Billing page at `/app/billing`
+   - Support:
+     - Monthly subscription plans (e.g. Starter, Pro, Agency)
+     - One‑off credit packs (optional)
+   - Use Stripe Checkout / Customer Portal pattern:
+     - Button to “Upgrade plan”
+     - Button to “Manage subscription”
+   - Store in DB:
+     - stripe_customer_id
+     - stripe_subscription_id
+     - current_plan
+     - plan_status
+   - Webhook handler:
+     - On successful payment / subscription:
+       - Update user plan
+       - Add credits
+     - On cancellation:
+       - Update plan_status
+
+7. AI tools (core of GoCopyAI)
+   All tools share a common pattern:
+   - Input form
+   - Validation
+   - Call to backend API route
+   - Backend calls LLM provider (OpenAI/Groq/DeepSeek) via a single abstraction layer
+   - Store each generation in `ai_generations` table:
+     - id
+     - user_id
+     - tool_type
+     - input_summary
+     - output
+     - tokens_estimate
+     - credits_used
+     - created_at
+
+   Tools to implement:
+
+   7.1 Video Tools
+   - Page: `/app/video`
+   - Features:
+     - YouTube script generator
+     - Short‑form hook ideas
+     - Video outline generator
+   - Inputs:
+     - Topic / niche
+     - Target audience
+     - Tone
+     - Platform (YouTube, TikTok, Reels, etc.)
+   - Outputs:
+     - Script (with sections)
+     - Hook list
+     - Outline
+
+   7.2 SEO Tools
+   - Page: `/app/seo`
+   - Features:
+     - Blog post outline
+     - SEO title & meta description
+     - Keyword cluster ideas
+   - Inputs:
+     - Main keyword
+     - Audience
+     - Tone
+   - Outputs:
+     - Structured outline
+     - Title/meta
+     - Keyword clusters
+
+   7.3 Social Tools
+   - Page: `/app/social`
+   - Features:
+     - Social post generator (Twitter, LinkedIn, IG)
+     - Carousel outline
+     - Content calendar ideas
+   - Inputs:
+     - Platform
+     - Topic
+     - Tone
+   - Outputs:
+     - Posts
+     - Carousel bullets
+     - Calendar suggestions
+
+   7.4 Ads Tools
+   - Page: `/app/ads`
+   - Features:
+     - Ad copy generator (FB/IG/Google)
+     - Headline variations
+     - Angle ideas
+   - Inputs:
+     - Offer description
+     - Audience
+     - Platform
+   - Outputs:
+     - Primary text
+     - Headlines
+     - Angles
+
+   7.5 Blog Tools
+   - Page: `/app/blog`
+   - Features:
+     - Long‑form blog draft
+     - Intro variations
+     - Conclusion variations
+   - Inputs:
+     - Topic
+     - Outline (optional)
+   - Outputs:
+     - Draft content
+     - Intros
+     - Conclusions
+
+   7.6 Generic Tool
+   - Page: `/app/tools`
+   - A generic “prompt → response” interface
+   - User selects:
+     - Use case (dropdown)
+     - Model (if multiple providers supported)
+   - Sends to same backend abstraction
+
+8. Quiz History
+   - Page: `/app/quiz-history`
+   - Show list of past quiz runs for the logged‑in user:
+     - Date
+     - Stage
+     - Overall score
+   - Click to view full result:
+     - Category scores
+     - Action plan
+
+9. Settings
+   - Page: `/app/settings`
+   - Sections:
+     - Profile (name, business name, website)
+     - Email (view only or change with confirmation)
+     - Password change
+   - Show plan & credits summary
+
+10. Admin Panel
+    - Page: `/app/admin`
+    - Only accessible if `role = 'admin'`
+    - Sections:
+      - Users:
+        - List users
+        - Search by email
+        - View credits, plan, created_at, last_login
+        - Adjust credits
+        - Change role (user/admin)
+      - Usage:
+        - List AI generations
+        - Filter by user, tool_type, date
+      - Quiz:
+        - Aggregate stats:
+          - Count by stage
+          - Average scores per category
+      - Billing:
+        - View Stripe data (read‑only from DB)
+
+--------------------------------------------------
+DATA MODEL (ABSTRACT)
+--------------------------------------------------
+
+Define a clean, minimal but complete schema (you adapt to Supercool’s conventions):
+
+- users
+  - id
+  - email
+  - password_hash
+  - role (enum: 'user', 'admin')
+  - name
+  - business_name
+  - website
+  - email_verified (boolean)
+  - stripe_customer_id
+  - stripe_subscription_id
+  - current_plan
+  - plan_status
+  - credits (numeric)
+  - created_at
+  - updated_at
+  - last_login_at
+
+- quiz_results
+  - id
+  - user_id (nullable)
+  - answers_json
+  - category_scores_json
+  - overall_score
+  - stage
+  - generated_plan (text)
+  - created_at
+
+- ai_generations
+  - id
+  - user_id
+  - tool_type
+  - input_summary
+  - output
+  - tokens_estimate
+  - credits_used
+  - created_at
+
+- audit_logs (optional but preferred)
+  - id
+  - user_id
+  - action
+  - metadata_json
+  - created_at
+
+You may add internal tables as needed for Supercool (workflows, etc.), but keep the core schema coherent.
+
+--------------------------------------------------
+BACKEND LOGIC REQUIREMENTS
+--------------------------------------------------
+
+1. Auth
+   - Implement signup, login, logout, password reset.
+   - On signup:
+     - Create user with default role `user`
+     - Set initial credits (e.g. 50)
+   - On login:
+     - Update last_login_at
+
+2. Role enforcement
+   - Middleware/guards:
+     - `/app/admin` → admin only
+     - All `/app/*` → authenticated only
+   - Redirect unauthenticated users to login.
+
+3. Credits
+   - Before each AI generation:
+     - Check user credits
+     - If insufficient → return error
+   - After generation:
+     - Deduct credits
+     - Log in `ai_generations`
+
+4. AI abstraction
+   - Create a single backend module/function that:
+     - Accepts: model_name, system_prompt, user_prompt, temperature, max_tokens
+     - Uses environment variables for API keys (e.g. OPENAI_API_KEY, GROQ_API_KEY, etc.)
+     - For now, implement with one provider (e.g. OpenAI) but structure it so it’s easy to swap.
+   - All tools call this abstraction.
+
+5. Quiz engine
+   - Define quiz questions in a structured way (array/JSON in code).
+   - Each question:
+     - id
+     - text
+     - type
+     - category
+     - weight
+     - options (if applicable)
+   - On submit:
+     - Validate answers
+     - Compute category scores and overall score
+     - Map score → stage
+     - Call AI to generate personalised action plan:
+       - Input: category scores, stage, business info (if available)
+       - Output: structured plan (sections, bullet points)
+     - Save to `quiz_results`
+     - Return data to frontend.
+
+6. Stripe integration
+   - Create backend endpoints for:
+     - Creating checkout session for subscription
+     - Creating checkout session for credit packs (optional)
+     - Handling Stripe webhooks
+   - Use environment variables for Stripe keys.
+   - On successful events:
+     - Update user’s plan and credits.
+
+--------------------------------------------------
+FRONTEND / UI REQUIREMENTS
+--------------------------------------------------
+
+1. Tech style
+   - Clean, modern, dark‑on‑light or light‑on‑dark theme (you choose, but be consistent).
+   - Responsive layout.
+   - Clear typography and spacing.
+   - No ugly default forms — style them.
+
+2. Homepage (Quiz)
+   - Hero section:
+     - Headline: “Find Your Business Marketing Maturity”
+     - Subheadline: “Answer a few questions and get a personalised action plan.”
+     - CTA: “Start the Quiz”
+   - Quiz UI:
+     - Multi‑step with progress indicator
+     - One question per step
+     - Back/Next buttons
+   - Results page:
+     - Stage name
+     - Score summary
+     - Category breakdown
+     - Action plan sections
+     - CTA to sign up / go to dashboard
+
+3. Dashboard
+   - Show:
+     - Welcome message with user name
+     - Credits remaining
+     - Quick links to tools
+     - Recent AI generations (last 5)
+     - Last quiz result (if any)
+
+4. Tools pages
+   - Each tool page:
+     - Left: form inputs
+     - Right: output panel
+   - Show loading states.
+   - Show error messages.
+   - Allow user to copy output.
+
+5. Admin panel
+   - Simple but functional tables.
+   - Filters and search where appropriate.
+
+--------------------------------------------------
+IMPLEMENTATION RULES
+--------------------------------------------------
+
+- Do NOT leave core logic as TODO.
+- Do NOT say “you can implement X later” for any core feature listed above.
+- Implement all routes, pages, and backend logic needed for:
+  - Auth
+  - Quiz
+  - Tools
+  - Credits
+  - Billing
+  - Admin
+- Use clear file and folder structure.
+- Use environment variables for all secrets:
+  - OPENAI_API_KEY (or GROQ/DEEPSEEK)
+  - STRIPE_SECRET_KEY
+  - STRIPE_WEBHOOK_SECRET
+- Where Supercool requires specific conventions (routes, handlers, etc.), follow them.
+
+--------------------------------------------------
+WHAT YOU MUST OUTPUT
+--------------------------------------------------
+
+1. Generate the full project structure and all necessary files.
+2. Wire all pages to their backend logic.
+3. Ensure navigation works between:
+   - `/` (quiz)
+   - `/auth/*`
+   - `/app/*`
+4. Ensure role checks and auth guards are in place.
+5. Ensure credits are enforced for all AI calls.
+6. Ensure quiz results are stored and retrievable.
+7. Ensure admin panel is functional.
+
+When you are done, the human should only need to:
+- Add API keys and Stripe keys to environment/config.
+- Configure domain and Stripe products.
+
+Build this now as a complete, production‑ready Supercool Coder project.
